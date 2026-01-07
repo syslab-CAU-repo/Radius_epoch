@@ -126,10 +126,9 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
         // === new code end ===
         // 💫💫💫💫💫 mut_cluster_metadata synchronization end 💫💫💫💫💫
 
-        let signer = context.get_signer(rollup.platform).await?;
-        let current_tx_orderer_address = signer.address();
-
         let epoch_leader_rpc_url = mut_cluster_metadata.epoch_leader_map.get(&old_epoch).cloned().unwrap_or_default(); // new code
+
+        mut_cluster_metadata.update()?;
 
         sync_leader_tx_orderer(
             context.clone(),
@@ -156,8 +155,6 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
             old_epoch,
             epoch_leader_rpc_url,
         );
-
-        mut_cluster_metadata.update()?;
 
         // 기존 get_raw_transaction_list 요청에서 하던 mut_rollup_metadata 업데이트는 할 필요 없음
         // provided_batch_number, provided_transaction_order, completed_batch_number 업데이트 등은 get_raw_transaction_epoch_list 요청에서 변하기에 그때 업데이트해줘야 함

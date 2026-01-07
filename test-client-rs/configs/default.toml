@@ -1,5 +1,5 @@
 total_transactions = 10000
-connection_threads = 4
+connection_threads = 64
 connections = 20
 duration = 50
 ethereum_rpc_url = "http://127.0.0.1:8545"

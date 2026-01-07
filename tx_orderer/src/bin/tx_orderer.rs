@@ -84,6 +84,20 @@ async fn start_tx_orderer(config_option: &mut ConfigOption) -> Result<(), Error>
     let config = Config::load(config_option)?;
     initialize_logger(&config)?;
 
+    // === new code start ===
+    // Worker thread 수 확인
+    let worker_threads = tokio::runtime::Handle::current()
+        .metrics()
+        .num_workers();
+    tracing::info!("Tokio runtime worker threads: {}", worker_threads);
+    
+    // 또는 시스템의 CPU 코어 수 확인
+    let cpu_cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
+    tracing::info!("Available CPU cores: {}", cpu_cores);
+    // === new code end ===
+    
     // Initialize the profiler.
     // let profiler = Profiler::init("http://127.0.0.1:4040", "tx_orderer", 100)?;
     let profiler = None;
@@ -330,6 +344,10 @@ async fn initialize_cluster_rpc_server(context: AppState) -> Result<(), Error> {
 
     cluster_rpc_server
         .register_rpc_method::<cluster::SendEndSignal>()
+        .await?;
+
+    cluster_rpc_server
+        .register_rpc_method::<cluster::GetRawTransactionEpochList>()
         .await?;
     // === new code end ===
 
