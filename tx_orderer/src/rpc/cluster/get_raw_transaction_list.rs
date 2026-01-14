@@ -758,15 +758,32 @@ pub fn get_last_valid_completed_epoch(
     completed_epoch: &BTreeSet<u64>,
     provided_epoch: u64,
 ) -> Result<u64, Error> {
+    println!("get_last_valid_completed_epoch 시작"); // test code
+
     let mut last_valid_epoch = provided_epoch;
 
+    println!("  last_valid_epoch: {:?}", last_valid_epoch); // test code
+
+    let mut iteration_count = 0;
+
     for &epoch in completed_epoch {
+        println!("  {:?}th iteration(epoch: {:?})", iteration_count, epoch); // test code
+        iteration_count += 1; // test code
+        
         if epoch == last_valid_epoch + 1 {
+            println!("  if epoch == last_valid_epoch + 1"); // test code
+            println!("  last_valid_epoch before: {:?}", last_valid_epoch); // test code
             last_valid_epoch += 1;
+            println!("  last_valid_epoch after: {:?}", last_valid_epoch); // test code
         } else if epoch > last_valid_epoch {
+            println!("  if epoch > last_valid_epoch"); // test code
             break;
         }
     }
+
+    println!("  last_valid_epoch after iteration: {:?}", last_valid_epoch); // test code
+
+    println!("get_last_valid_completed_epoch 종료"); // test code
 
     Ok(last_valid_epoch)
 }

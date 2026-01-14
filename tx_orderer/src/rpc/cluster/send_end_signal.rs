@@ -73,7 +73,6 @@ impl RpcParameter<AppState> for SendEndSignal {
                 Error::TxOrdererInfoNotFound
             })?;
 
-        /*
         let current_node_cluster_rpc_url = current_node_rpc_info.cluster_rpc_url.clone()
             .ok_or_else(|| {
                 tracing::error!(
@@ -82,19 +81,20 @@ impl RpcParameter<AppState> for SendEndSignal {
                 );
                 Error::GeneralError("Cluster RPC URL not found".into())
             })?;
-        */
 
         // println!("current_node_cluster_rpc_url: {:?}", current_node_cluster_rpc_url); // test code
         println!("tx_orderer_address: {:?}", tx_orderer_address); // test code
         println!("epoch's leader: {:?}", cluster_metadata.epoch_leader_map.get(&self.epoch).unwrap_or(&"".to_string())); // test code
 
-        // 현재 노드가 epoch의 leader인지 확인(❗address❗로 비교)
-        if cluster_metadata.epoch_leader_map.get(&self.epoch).unwrap_or(&"".to_string()) != &tx_orderer_address.to_string() {
+        // 현재 노드가 epoch의 leader인지 확인(❗URL❗로 비교)
+        if cluster_metadata.epoch_leader_map.get(&self.epoch).unwrap_or(&"".to_string()) != &current_node_cluster_rpc_url {
             tracing::error!(
-                "Received end_signal but current node is not the epoch's leader. rollup_id: {:?}, epoch: {}, sender_address: {:?}",
+                "Received end_signal but current node is not the epoch's leader. rollup_id: {:?}, epoch: {}, sender_address: {:?}, current_url: {:?}, epoch_leader_url: {:?}",
                 self.rollup_id,
                 self.epoch,
-                self.sender_address
+                self.sender_address,
+                current_node_cluster_rpc_url,
+                cluster_metadata.epoch_leader_map.get(&self.epoch).unwrap_or(&"".to_string())
             );
             return Err(Error::GeneralError("Not a leader node".into()).into());
         }

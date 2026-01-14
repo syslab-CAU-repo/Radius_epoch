@@ -101,6 +101,17 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
             return Ok(());
         };
 
+        // old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (이미 존재하지 않을 때만)
+        if !mut_cluster_metadata.epoch_leader_map.contains_key(&old_epoch) {
+            println!("old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (이미 존재하지 않을 때만)"); // test code
+            if let Some(current_leader_rpc_info) = cluster.get_tx_orderer_rpc_info(&self.leader_change_message.current_leader_tx_orderer_address) {
+                if let Some(cluster_rpc_url) = &current_leader_rpc_info.cluster_rpc_url {
+                    mut_cluster_metadata.epoch_leader_map.insert(old_epoch, cluster_rpc_url.clone());
+                    println!("old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 완료"); // test code
+                }
+            }
+        }
+
         mut_cluster_metadata.epoch = Some(old_epoch + 1); // 🚩 epoch 
 
         let new_epoch = if let Some(epoch) = mut_cluster_metadata.epoch {
@@ -110,9 +121,16 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
             return Ok(());
         };
 
-        let new_leader_tx_orderer_address = mut_cluster_metadata.leader_tx_orderer_rpc_info.as_ref().unwrap().tx_orderer_address.to_string();
-
-        mut_cluster_metadata.epoch_leader_map.insert(new_epoch, new_leader_tx_orderer_address); // 🚩 epoch_leader_map
+        // new_epoch의 리더 RPC URL을 epoch_leader_map에 저장
+        if let Some(cluster_rpc_url) = &leader_tx_orderer_rpc_info.cluster_rpc_url {
+            mut_cluster_metadata.epoch_leader_map.insert(new_epoch, cluster_rpc_url.clone()); // 🚩 epoch_leader_map
+        } else {
+            tracing::error!(
+                "cluster_rpc_url not found for new leader - rollup_id: {:?}, new_epoch: {}",
+                self.leader_change_message.rollup_id,
+                new_epoch
+            );
+        }
 
         println!("💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
         println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
@@ -126,7 +144,18 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
         // === new code end ===
         // 💫💫💫💫💫 mut_cluster_metadata synchronization end 💫💫💫💫💫
 
-        let epoch_leader_rpc_url = mut_cluster_metadata.epoch_leader_map.get(&old_epoch).cloned().unwrap_or_default(); // new code
+        // old_epoch의 리더 RPC URL 가져오기
+        let epoch_leader_rpc_url = mut_cluster_metadata.epoch_leader_map.get(&old_epoch).cloned().ok_or_else(|| {
+            tracing::error!(
+                "epoch_leader_rpc_url not found for old_epoch: {:?} - rollup_id: {:?}, cluster_id: {:?}",
+                old_epoch,
+                self.leader_change_message.rollup_id,
+                rollup.cluster_id
+            );
+            Error::GeneralError("epoch_leader_rpc_url not found".into())
+        })?;
+
+        println!("epoch_leader_rpc_url: {:?}", epoch_leader_rpc_url); // test code
 
         mut_cluster_metadata.update()?;
 
@@ -145,7 +174,7 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
             &self.leader_change_message.current_leader_tx_orderer_address,
             old_epoch,
             new_epoch,
-            epoch_leader_rpc_url.clone(),
+            epoch_leader_rpc_url.clone(), // 사용 안 함
         )
         .await;
 

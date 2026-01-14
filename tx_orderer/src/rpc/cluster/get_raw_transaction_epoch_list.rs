@@ -74,6 +74,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
 
         if let Ok(can_provide_epoch) = CanProvideEpochInfo::get(&rollup_id) {
             let completed_epoch_list = &can_provide_epoch.completed_epoch;
+            println!("🔍 completed_epoch_list: {:?}", completed_epoch_list); // test code
             epoch = match get_last_valid_completed_epoch(completed_epoch_list, rollup_metadata.provided_epoch) {
                 Ok(last_valid_epoch) => last_valid_epoch,
                 Err(err) => {
@@ -119,7 +120,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             ));
 
             if transactions_in_batch == 0 { // All transactions in the batch have been processed
-                current_completed_batch_number += 1;    
+                current_completed_batch_number += 1;
             }
             
             current_provided_batch_number += 1;
@@ -128,6 +129,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             iteration_count += 1; // test code
         }
 
+        println!("current_completed_batch_number(Batch 순회 후): {:?}", current_completed_batch_number); // test code
         println!("current_provided_batch_number(Batch 순회 후): {:?}", current_provided_batch_number); // test code
         println!("current_provided_transaction_order(Batch 순회 후): {:?}", current_provided_transaction_order); // test code
 

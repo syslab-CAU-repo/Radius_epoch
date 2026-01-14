@@ -164,11 +164,39 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
 
         // === new code start ===
 
+        // old_epoch가 없으면 오류 출력
+        let old_epoch = self.old_epoch.ok_or_else(|| {
+            tracing::error!("old_epoch is missing in SyncLeaderTxOrderer request - rollup_id: {:?}", rollup_id);
+            Error::GeneralError("old_epoch is missing".into())
+        })?;
+
+        println!("old_epoch: {:?}", old_epoch); // test code
+
+        // old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (이미 존재하지 않을 때만)
+        if !mut_cluster_metadata.epoch_leader_map.contains_key(&old_epoch) {
+            println!("old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (이미 존재하지 않을 때만)"); // test code
+            if let Some(current_leader_rpc_info) = cluster.get_tx_orderer_rpc_info(&self.leader_change_message.current_leader_tx_orderer_address) {
+                if let Some(cluster_rpc_url) = &current_leader_rpc_info.cluster_rpc_url {
+                    mut_cluster_metadata.epoch_leader_map.insert(old_epoch, cluster_rpc_url.clone());
+                }
+            }
+        }
+
         // 리더가 바뀌었을 때 SyncLeaderTxOrderer 요청을 받은 노드에서 SyncLeaderTxOrderer 요청에 담긴 new_epoch 값을 사용하여 epoch를 업데이트함(동기화)
         mut_cluster_metadata.epoch = self.new_epoch; // new code -> 🚩 epoch
 
         // new_epoch의 리더(next_leader) RPC URL도 epoch_leader_map에 저장 (동기화)
-        mut_cluster_metadata.epoch_leader_map.insert(self.new_epoch.unwrap(), leader_tx_orderer_rpc_info.tx_orderer_address.to_string()); // 🚩 epoch_leader_map
+        if let Some(new_epoch_value) = self.new_epoch {
+            if let Some(cluster_rpc_url) = &leader_tx_orderer_rpc_info.cluster_rpc_url {
+                mut_cluster_metadata.epoch_leader_map.insert(new_epoch_value, cluster_rpc_url.clone()); // 🚩 epoch_leader_map
+            } else {
+                tracing::error!(
+                    "cluster_rpc_url not found for new leader - rollup_id: {:?}, new_epoch: {}",
+                    rollup_id,
+                    new_epoch_value
+                );
+            }
+        }
 
         // === new code end ===
         // 💫💫💫💫💫 mut_cluster_metadata synchronization end(SyncLeaderTxOrderer) 💫💫💫💫💫
@@ -242,14 +270,6 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
             rollup.liveness_service_provider,
             &rollup.cluster_id,
         )?;
-
-        // old_epoch가 없으면 오류 출력
-        let old_epoch = self.old_epoch.ok_or_else(|| {
-            tracing::error!("old_epoch is missing in SyncLeaderTxOrderer request - rollup_id: {:?}", rollup_id);
-            Error::GeneralError("old_epoch is missing".into())
-        })?;
-
-        println!("old_epoch: {:?}", old_epoch); // test code
 
         // epoch_leader_rpc_url이 없으면 오류 출력
         let epoch_leader_rpc_url = cluster_metadata.epoch_leader_map.get(&old_epoch).ok_or_else(|| {
