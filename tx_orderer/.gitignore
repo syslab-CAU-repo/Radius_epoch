@@ -1,10 +1,10 @@
 /target
 
 /data
-/scripts/tx_orderer
+# /scripts/tx_orderer
 
-/scripts/execute/env.sh
-/scripts/rpc-call/env.sh
+# /scripts/execute/env.sh
+# /scripts/rpc-call/env.sh
 
-/scripts/verify
-/utils
+# /scripts/verify
+# /utils
