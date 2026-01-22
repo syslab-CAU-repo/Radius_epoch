@@ -4,7 +4,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use super::LeaderChangeMessage;
+use super::SyncRollupMetadata; // new code
 use crate::rpc::prelude::*;
 
 use radius_sdk::{json_rpc::client::Priority, signature::Address};
@@ -238,6 +238,25 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             }
         }
 
+        if let Err(error) = sync_rollup_metadata(
+            context.clone(),
+            rollup_id.clone(),
+            mut_rollup_metadata.batch_number,
+            mut_rollup_metadata.transaction_order,
+            mut_rollup_metadata.provided_batch_number,
+            mut_rollup_metadata.provided_transaction_order,
+            mut_rollup_metadata.provided_epoch,
+            mut_rollup_metadata.completed_batch_number,
+        )
+        .await
+        {
+            tracing::error!(
+                "sync_rollup_metadata error - rollup id: {:?}, error: {:?}",
+                rollup_id,
+                error
+            );
+        }
+
         let _ = mut_rollup_metadata.update().map_err(|error| {
             tracing::error!(
                 "rollup_metadata update error - rollup id: {:?}, error: {:?}",
@@ -245,12 +264,6 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 error
             );
         });
-
-        sync_rollup_metadata(
-            context.clone(),
-            rollup_id,
-            mut_rollup_metadata,
-        );
 
         let end_get_raw_transaction_epoch_list_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -326,4 +339,66 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             raw_transaction_list: raw_transaction_epoch_list,
         })
     }
+}
+
+pub async fn sync_rollup_metadata(
+    context: AppState,
+    rollup_id: RollupId,
+    batch_number: u64,
+    transaction_order: u64,
+    provided_batch_number: u64,
+    provided_transaction_order: i64,
+    provided_epoch: u64, 
+    completed_batch_number: i64, 
+) -> Result<(), radius_sdk::kvstore::KvStoreError> {
+    println!("=== 🔄🔥 sync_rollup_metadata 시작 🔥🔄 ==="); // test code
+
+    let rollup = Rollup::get(&rollup_id)?;
+
+    let cluster_metadata = ClusterMetadata::get(
+        rollup.platform,
+        rollup.liveness_service_provider,
+        &rollup.cluster_id,
+    )?;
+
+    let cluster = Cluster::get(
+        rollup.platform,
+        rollup.liveness_service_provider,
+        &rollup.cluster_id,
+        cluster_metadata.platform_block_height,
+    )?;
+
+    let other_cluster_rpc_url_list = cluster.get_other_cluster_rpc_url_list();
+    if other_cluster_rpc_url_list.is_empty() {
+        tracing::info!("No cluster RPC URLs available for synchronization");
+        return Ok(());
+    }
+
+    let parameter = SyncRollupMetadata {
+        rollup_id: rollup_id.clone(),
+        batch_number,
+        transaction_order,
+        provided_batch_number,
+        provided_transaction_order,
+        provided_epoch,
+        completed_batch_number,
+    };
+
+    let urls = other_cluster_rpc_url_list.clone();
+
+    let context_clone = context.clone();
+
+    tokio::spawn(async move {
+        let _ = context_clone
+            .rpc_client()
+            .fire_and_forget_multicast(
+                urls,
+                SyncRollupMetadata::method(),
+                &parameter,
+                Id::Null,
+            )
+            .await;
+    });
+
+    Ok(())
 }

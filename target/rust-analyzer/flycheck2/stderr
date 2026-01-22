@@ -1,4 +1,0 @@
-   0.307574310s  INFO prepare_target{force=false package_id=tx_orderer v0.1.0 (/home/syslab/radius/tx_orderer) target="tx_orderer"}: cargo::core::compiler::fingerprint: fingerprint dirty for tx_orderer v0.1.0 (/home/syslab/radius/tx_orderer)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("tx_orderer", ["lib"], "/home/syslab/radius/tx_orderer/src/lib.rs", Edition2021) }
-   0.307592609s  INFO prepare_target{force=false package_id=tx_orderer v0.1.0 (/home/syslab/radius/tx_orderer) target="tx_orderer"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(Stale)
-    Checking tx_orderer v0.1.0 (/home/syslab/radius/tx_orderer)
-error: could not compile `tx_orderer` (lib test) due to 2 previous errors; 1 warning emitted

@@ -353,6 +353,10 @@ async fn initialize_cluster_rpc_server(context: AppState) -> Result<(), Error> {
     cluster_rpc_server
         .register_rpc_method::<cluster::SyncCanProvideEpochInfo>()
         .await?;
+
+    cluster_rpc_server
+        .register_rpc_method::<cluster::SyncRollupMetadata>()
+        .await?;
     // === new code end ===
 
     let cluster_handle = cluster_rpc_server.init(cluster_rpc_url.clone()).await?;
