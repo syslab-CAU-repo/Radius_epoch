@@ -12,6 +12,7 @@ mod sync_raw_transaction;
 mod sync_epoch; // new code
 mod send_end_signal; // new code
 mod get_raw_transaction_epoch_list; // new code
+mod sync_can_provide_epoch_info; // new code
 
 pub use add_mev_searcher_info::*;
 pub use create_batch::*;
@@ -27,3 +28,4 @@ pub use sync_raw_transaction::*;
 pub use sync_epoch::*; // new code
 pub use send_end_signal::*; // new code 
 pub use get_raw_transaction_epoch_list::*; // new code
+pub use sync_can_provide_epoch_info::*; // new code

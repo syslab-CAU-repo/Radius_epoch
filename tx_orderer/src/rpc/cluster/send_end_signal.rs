@@ -2,6 +2,8 @@ use crate::rpc::prelude::*;
 
 use radius_sdk::signature::Address;
 
+use super::SyncCanProvideEpochInfo;
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SendEndSignal {
     pub rollup_id: RollupId,
@@ -93,7 +95,7 @@ impl RpcParameter<AppState> for SendEndSignal {
                 self.rollup_id,
                 self.epoch,
                 self.sender_address,
-                current_node_cluster_rpc_url,
+                current_node_cluster_rpc_url.clone(),
                 cluster_metadata.epoch_leader_map.get(&self.epoch).unwrap_or(&"".to_string())
             );
             return Err(Error::GeneralError("Not a leader node".into()).into());
@@ -161,8 +163,59 @@ impl RpcParameter<AppState> for SendEndSignal {
             e
         })?;
 
+        sync_can_provide_epoch_info(
+            context.clone(),
+            cluster,
+            self.rollup_id.clone(),
+            self.epoch,
+            current_node_cluster_rpc_url,
+        );
+
         println!("===== 📤📤📤📤📤 SendEndSignal handler() 종료(노드 주소: {:?}) 📤📤📤📤📤 =====", tx_orderer_address); // test code
 
         Ok(())
     }
 }
+
+pub fn sync_can_provide_epoch_info(
+    context: AppState,
+    cluster: Cluster,
+    rollup_id: RollupId,
+    epoch: u64,
+    current_node_cluster_rpc_url: String,
+) {
+    println!("=== 🔄🕐 sync_can_provide_epoch_info 시작 🕐🔄 ==="); // test code
+
+    let mut other_cluster_rpc_url_list = cluster.get_other_cluster_rpc_url_list();
+    if other_cluster_rpc_url_list.is_empty() {
+        tracing::info!("No cluster RPC URLs available for synchronization");
+        return;
+    }
+
+    other_cluster_rpc_url_list = other_cluster_rpc_url_list
+        .into_iter()
+        .filter(|rpc_url| rpc_url != &current_node_cluster_rpc_url)
+        .collect();
+
+    let parameter = SyncCanProvideEpochInfo {
+        epoch,
+        rollup_id,
+    };
+
+    tokio::spawn(async move {
+        let _ = context
+            .rpc_client()
+            .fire_and_forget_multicast(
+                other_cluster_rpc_url_list,
+                SyncCanProvideEpochInfo::method(),
+                &parameter,
+                Id::Null,
+            )
+            .await;
+    });
+
+    println!("=== 🔄🕐 sync_can_provide_epoch_info 종료 🕐🔄 ==="); // test codes
+}
+
+
+

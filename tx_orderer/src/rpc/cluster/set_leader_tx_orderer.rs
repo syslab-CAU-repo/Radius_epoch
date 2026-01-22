@@ -157,8 +157,6 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
 
         println!("epoch_leader_rpc_url: {:?}", epoch_leader_rpc_url); // test code
 
-        mut_cluster_metadata.update()?;
-
         sync_leader_tx_orderer(
             context.clone(),
             cluster,
@@ -177,6 +175,8 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
             epoch_leader_rpc_url.clone(), // 사용 안 함
         )
         .await;
+
+        mut_cluster_metadata.update()?;
 
         send_end_signal_to_epoch_leader(
             context.clone(),

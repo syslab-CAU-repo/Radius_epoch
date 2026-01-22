@@ -72,10 +72,11 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
 
         let mut epoch = rollup_metadata.provided_epoch;
 
+        // 현재까지 처리된 가장 최신의 epoch를 받아옴(CanProvideEpochInfo에서 받아옴)
         if let Ok(can_provide_epoch) = CanProvideEpochInfo::get(&rollup_id) {
             let completed_epoch_list = &can_provide_epoch.completed_epoch;
-            println!("🔍 completed_epoch_list: {:?}", completed_epoch_list); // test code
-            epoch = match get_last_valid_completed_epoch(completed_epoch_list, rollup_metadata.provided_epoch) {
+            // println!("🔍 completed_epoch_list: {:?}", completed_epoch_list); // test code
+            epoch = match get_last_valid_completed_epoch(completed_epoch_list, epoch) {
                 Ok(last_valid_epoch) => last_valid_epoch,
                 Err(err) => {
                     tracing::error!("Failed to get epoch - rollup_id: {:?} / error: {:?}", rollup_id, err);
@@ -236,6 +237,20 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 );
             }
         }
+
+        let _ = mut_rollup_metadata.update().map_err(|error| {
+            tracing::error!(
+                "rollup_metadata update error - rollup id: {:?}, error: {:?}",
+                rollup_id,
+                error
+            );
+        });
+
+        sync_rollup_metadata(
+            context.clone(),
+            rollup_id,
+            mut_rollup_metadata,
+        );
 
         let end_get_raw_transaction_epoch_list_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)

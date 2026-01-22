@@ -741,9 +741,14 @@ pub fn my_extract_raw_transactions(batch: Batch, epoch: u64, transactions_in_bat
             match transaction {
                 RawTransaction::Eth(eth_tx) => {
                     match eth_tx.epoch {
-                        Some(tx_epoch) if tx_epoch >= epoch => {
-                            *transactions_in_batch += 1; // Unprocessed transactions still in the batch
-                            Some(eth_tx.raw_transaction)
+                        Some(tx_epoch) => {
+                            if tx_epoch > epoch { // tx_epoch가 epoch보다 크면 처리해야 하는 트랜잭션이므로 카운트
+                                *transactions_in_batch += 1; // Transactions to be processed still in the batch
+                                None // tx_epoch가 epoch보다 크면 처리해야 하는 트랜잭션이므로 카운트하고 트랜잭션을 반환하지 않음
+                            }
+                            else {
+                                Some(eth_tx.raw_transaction) // tx_epoch가 epoch보다 작거나 같으면 트랜잭션을 반환
+                            }
                         }
                         _ => None,
                     }
@@ -767,14 +772,14 @@ pub fn get_last_valid_completed_epoch(
     let mut iteration_count = 0;
 
     for &epoch in completed_epoch {
-        println!("  {:?}th iteration(epoch: {:?})", iteration_count, epoch); // test code
+        // println!("  {:?}th iteration(epoch: {:?})", iteration_count, epoch); // test code
         iteration_count += 1; // test code
         
         if epoch == last_valid_epoch + 1 {
-            println!("  if epoch == last_valid_epoch + 1"); // test code
-            println!("  last_valid_epoch before: {:?}", last_valid_epoch); // test code
+            // println!("  if epoch == last_valid_epoch + 1"); // test code
+            //println!("  last_valid_epoch before: {:?}", last_valid_epoch); // test code
             last_valid_epoch += 1;
-            println!("  last_valid_epoch after: {:?}", last_valid_epoch); // test code
+            // println!("  last_valid_epoch after: {:?}", last_valid_epoch); // test code
         } else if epoch > last_valid_epoch {
             println!("  if epoch > last_valid_epoch"); // test code
             break;
