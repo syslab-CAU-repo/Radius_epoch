@@ -2,4 +2,5 @@ target/
 tx_orderer/**/logs/**
 tx_orderer/data_*
 *.log
-
+stompesi/
+*.tar.gz
