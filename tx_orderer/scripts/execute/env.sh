@@ -32,9 +32,9 @@ fi
 TX_ORDERER_PRIVATE_KEY="0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6" # 9 
 
 # TxOrderer
-TX_ORDERER_INTERNAL_RPC_URL="http://127.0.0.1:4000" # Internal IP - Please change this IP.
-TX_ORDERER_CLUSTER_RPC_URL="http://165.194.35.15:5000"  # External IP - Please change this IP.
-TX_ORDERER_EXTERNAL_RPC_URL="http://165.194.35.15:3000" # External IP - Please change this IP.
+TX_ORDERER_INTERNAL_RPC_URL="http://165.194.35.15:11101" # Internal IP - Please change this IP.
+TX_ORDERER_EXTERNAL_RPC_URL="http://165.194.35.15:11102" # External IP - Please change this IP.
+TX_ORDERER_CLUSTER_RPC_URL="http://165.194.35.15:11103"  # External IP - Please change this IP.
 
 # DKG (for ENCRYPTED_TRANSACTION_TYPE=skde)
 DISTRIBUTED_KEY_GENERATOR_EXTERNAL_RPC_URL="http://165.194.35.15:11002" # Please change this distribured key generator (external) rpc url.
