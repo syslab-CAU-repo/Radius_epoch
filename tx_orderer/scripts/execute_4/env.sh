@@ -32,12 +32,12 @@ if [[ ! -f "$BIN_PATH" ]]; then
 fi
 
 # Operating tx_orderer private key
-TX_ORDERER_PRIVATE_KEY="0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6" # 3
+TX_ORDERER_PRIVATE_KEY="0x689af8efa8c651a91ad287602527f3af2fe9f6501a7ac4b061667b5a93e037fd" 
 
 # TxOrderer
-TX_ORDERER_INTERNAL_RPC_URL="http://127.0.0.1:4003" # Internal IP - Please change this IP.
-TX_ORDERER_CLUSTER_RPC_URL="http://165.194.35.15:5003"  # External IP - Please change this IP.
-TX_ORDERER_EXTERNAL_RPC_URL="http://165.194.35.15:3003" # External IP - Please change this IP.
+TX_ORDERER_INTERNAL_RPC_URL="http://165.194.35.14:11101" # Internal IP - Please change this IP.
+TX_ORDERER_EXTERNAL_RPC_URL="http://165.194.35.14:11102" # External IP - Please change this IP.
+TX_ORDERER_CLUSTER_RPC_URL="http://165.194.35.14:11103"  # External IP - Please change this IP.
 
 # DKG (for ENCRYPTED_TRANSACTION_TYPE=skde)
 DISTRIBUTED_KEY_GENERATOR_EXTERNAL_RPC_URL="http://165.194.35.15:11002" # Please change this distribured key generator (external) rpc url.
