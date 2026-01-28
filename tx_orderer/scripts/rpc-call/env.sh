@@ -1,7 +1,7 @@
 # tx_orderer/scripts/rpc-call/env.sh
 
 #!/bin/bash
-TX_ORDERER_INTERNAL_RPC_URL="http://165.194.35.15:11101" # This should be matched with TX_ORDERER_INTERNAL_RPC_URL in tx_orderer/scripts/execute/env.sh
+TX_ORDERER_INTERNAL_RPC_URL="http://165.194.35.11:11104" # This should be matched with TX_ORDERER_INTERNAL_RPC_URL in tx_orderer/scripts/execute/env.sh
 
 ################################# Sequencing (liveness) Contract ####################
 LIVENESS_PLATFORM="ethereum"
