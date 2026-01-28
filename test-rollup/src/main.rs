@@ -41,6 +41,7 @@ async fn main() {
     let rpc_urls = [
         "http://165.194.35.15:11103", // sys5(TX_ORDERER)
         "http://165.194.35.11:11103", // sys2(TX_ORDERER_2)
+        "http://165.194.35.11:11106", // sys2(TX_ORDERER_3)
         "http://165.194.35.14:11103", // sys4(TX_ORDERER_4)
         "http://165.194.35.14:11106", // sys4(TX_ORDERER_5)
         // "http://127.0.0.1:5003",
@@ -68,9 +69,11 @@ async fn main() {
     */
 
     let tx_orderer_addresses = [
-        "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720", // sys5
-        "0x2546BcD3c84621e976D8185a91A922aE77ECEc30", // sys2
-        "0xbDA5747bFD65F08deb54cb465eB87D40e51B197E", // sys4
+        "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720", // sys5(TX_ORDERER)
+        "0xcd3B766CCDd6AE721141F452C550Ca635964ce71", // sys2(TX_ORDERER_2)
+        "0x2546BcD3c84621e976D8185a91A922aE77ECEc30", // sys2(TX_ORDERER_3)
+        "0xbDA5747bFD65F08deb54cb465eB87D40e51B197E", // sys4(TX_ORDERER_4)
+        "0xdD2FD4581271e230360230F9337D5c0430Bf44C0", // sys4(TX_ORDERER_5)
     ];
 
     let l1_block_generation_interval = 12;

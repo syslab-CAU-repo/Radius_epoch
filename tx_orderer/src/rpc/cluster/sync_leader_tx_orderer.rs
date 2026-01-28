@@ -101,9 +101,9 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
 
         
         // === test code start ===
-        println!("is_leader: {:?}", is_leader); // test code
-        println!("signer.address() value: {:?}", signer.address()); // test code
-        println!("self.leader_change_message.next_leader_tx_orderer_address: {:?}", self.leader_change_message.next_leader_tx_orderer_address); // test code
+        // println!("is_leader: {:?}", is_leader); // test code
+        // println!("signer.address() value: {:?}", signer.address()); // test code
+        // println!("self.leader_change_message.next_leader_tx_orderer_address: {:?}", self.leader_change_message.next_leader_tx_orderer_address); // test code
         // === test code end ===
         
         let leader_tx_orderer_rpc_info = cluster
@@ -148,14 +148,14 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
         // 📌 epoch_leader_map ✅
         // 📌 epoch_node_bitmap -> no need to synchronize
 
-        println!("🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
-        println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
-        println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
-        println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
-        println!("💡mut_cluster_metadata.epoch(업데이트 전): {:?}", mut_cluster_metadata.epoch); // test code
-        println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
-        println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
-        println!("🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
+        println!("🔄🔄 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
+        // println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
+        // println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
+        // println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
+        println!("🔄🔄 💡mut_cluster_metadata.epoch(업데이트 전): {:?}", mut_cluster_metadata.epoch); // test code
+        // println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
+        // println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
+        println!("🔄🔄 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
 
         mut_cluster_metadata.platform_block_height =
             self.leader_change_message.platform_block_height; // 🚩 platform_block_height 
@@ -201,14 +201,14 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
         // === new code end ===
         // 💫💫💫💫💫 mut_cluster_metadata synchronization end(SyncLeaderTxOrderer) 💫💫💫💫💫
 
-        println!("💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
-        println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
-        println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
-        println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
-        println!("💡mut_cluster_metadata.epoch(업데이트 후): {:?}", mut_cluster_metadata.epoch); // test code
-        println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
-        println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
-        println!("💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
+        println!("🔄🔄 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
+        // println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
+        // println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
+        // println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
+        println!("🔄🔄 💡mut_cluster_metadata.epoch(업데이트 후): {:?}", mut_cluster_metadata.epoch); // test code
+        // println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
+        // println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
+        println!("🔄🔄 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
 
         mut_cluster_metadata.update()?;
 
@@ -223,14 +223,14 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
         // 📌 completed_batch_number ✅
 
         // === test code start ===
-        println!("= 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization before update 🔥🔥🔥🔥🔥 ="); // test code
-        println!("mut_rollup_metadata.batch_number: {:?}", mut_rollup_metadata.batch_number); // test code
-        println!("mut_rollup_metadata.transaction_order: {:?}", mut_rollup_metadata.transaction_order); // test code
-        println!("mut_rollup_metadata.provided_batch_number: {:?}", mut_rollup_metadata.provided_batch_number); // test code
-        println!("mut_rollup_metadata.provided_transaction_order: {:?}", mut_rollup_metadata.provided_transaction_order); // test code
-        println!("mut_rollup_metadata.provided_epoch: {:?}", mut_rollup_metadata.provided_epoch); // test code
-        println!("mut_rollup_metadata.completed_batch_number: {:?}", mut_rollup_metadata.completed_batch_number); // test code
-        println!("= 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization after update 🔥🔥🔥🔥🔥 ="); // test code
+        println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization before update 🔥🔥🔥🔥🔥"); // test code
+        println!("🔄🔄 mut_rollup_metadata.batch_number: {:?}", mut_rollup_metadata.batch_number); // test code
+        println!("🔄🔄 mut_rollup_metadata.transaction_order: {:?}", mut_rollup_metadata.transaction_order); // test code
+        println!("🔄🔄 mut_rollup_metadata.provided_batch_number: {:?}", mut_rollup_metadata.provided_batch_number); // test code
+        println!("🔄🔄 mut_rollup_metadata.provided_transaction_order: {:?}", mut_rollup_metadata.provided_transaction_order); // test code
+        println!("🔄🔄 mut_rollup_metadata.provided_epoch: {:?}", mut_rollup_metadata.provided_epoch); // test code
+        println!("🔄🔄 mut_rollup_metadata.completed_batch_number: {:?}", mut_rollup_metadata.completed_batch_number); // test code
+        println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization after update 🔥🔥🔥🔥🔥"); // test code
         // === test code end === 
         
         mut_rollup_metadata.batch_number = self.batch_number; // 🚩 batch_number 
@@ -242,14 +242,14 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
         mut_rollup_metadata.completed_batch_number = self.completed_batch_number; // new code -> 🚩 completed_batch_number 
 
         // === test code start ===
-        println!("= 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization before update 🔥🔥🔥🔥🔥 ="); // test code
-        println!("mut_rollup_metadata.batch_number: {:?}", mut_rollup_metadata.batch_number); // test code
-        println!("mut_rollup_metadata.transaction_order: {:?}", mut_rollup_metadata.transaction_order); // test code
-        println!("mut_rollup_metadata.provided_batch_number: {:?}", mut_rollup_metadata.provided_batch_number); // test code
-        println!("mut_rollup_metadata.provided_transaction_order: {:?}", mut_rollup_metadata.provided_transaction_order); // test code
-        println!("mut_rollup_metadata.provided_epoch: {:?}", mut_rollup_metadata.provided_epoch); // test code
-        println!("mut_rollup_metadata.completed_batch_number: {:?}", mut_rollup_metadata.completed_batch_number); // test code
-        println!("= 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization after update 🔥🔥🔥🔥🔥 ="); // test code
+        println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization before update 🔥🔥🔥🔥🔥"); // test code
+        println!("🔄🔄 mut_rollup_metadata.batch_number: {:?}", mut_rollup_metadata.batch_number); // test code
+        println!("🔄🔄 mut_rollup_metadata.transaction_order: {:?}", mut_rollup_metadata.transaction_order); // test code
+        println!("🔄🔄 mut_rollup_metadata.provided_batch_number: {:?}", mut_rollup_metadata.provided_batch_number); // test code
+        println!("🔄🔄 mut_rollup_metadata.provided_transaction_order: {:?}", mut_rollup_metadata.provided_transaction_order); // test code
+        println!("🔄🔄 mut_rollup_metadata.provided_epoch: {:?}", mut_rollup_metadata.provided_epoch); // test code
+        println!("🔄🔄 mut_rollup_metadata.completed_batch_number: {:?}", mut_rollup_metadata.completed_batch_number); // test code
+        println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization after update 🔥🔥🔥🔥🔥"); // test code
         // === test code end === 
 
         /*
@@ -282,7 +282,7 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
             Error::GeneralError("epoch_leader_rpc_url not found".into())
         })?;
 
-        println!("💡epoch_leader_rpc_url: {:?}", epoch_leader_rpc_url); // test code
+        // println!("💡epoch_leader_rpc_url: {:?}", epoch_leader_rpc_url); // test code
 
         send_end_signal_to_epoch_leader(
             context.clone(),
@@ -316,7 +316,7 @@ pub fn send_end_signal_to_epoch_leader(
     epoch: u64,
     epoch_leader_rpc_url: String,
 ) {
-    println!("=== 📤⚙️ send_end_signal_to_epoch_leader 시작 ⚙️📤 ==="); // test code
+    println!("=== 📤⚙️ send_end_signal_to_epoch_leader 시작(epoch: {:?}) ⚙️📤 ===", epoch); // test code
 
     tokio::spawn(async move {
         let rollup = match Rollup::get(&rollup_id) {
@@ -338,9 +338,9 @@ pub fn send_end_signal_to_epoch_leader(
         let sender_address = signer.address().clone();
         let sender_address_clone = sender_address.clone();
 
-        println!("send_end_signal 요청 보내는 노드: {:?}", sender_address_clone); // test code
-        println!("epoch: {:?}", epoch); // test code
-        println!("epoch {:?}의 리더 노드 url: {:?}", epoch, epoch_leader_rpc_url); // test code
+        println!("📤⚙️ send_end_signal 요청 보내는 노드: {:?}", sender_address_clone); // test code
+        println!("📤⚙️ epoch: {:?}", epoch); // test code
+        println!("📤⚙️ epoch {:?}의 리더 노드 url: {:?}", epoch, epoch_leader_rpc_url); // test code
 
         let parameter = SendEndSignal {
             rollup_id,
@@ -358,7 +358,7 @@ pub fn send_end_signal_to_epoch_leader(
             )
             .await;
 
-        println!("=== 📤⚙️ send_end_signal_to_epoch_leader 종료(노드 주소: {:?}) ⚙️📤 ===", sender_address); // test code
+        println!("=== 📤⚙️ send_end_signal_to_epoch_leader 종료(epoch: {:?}) ⚙️📤 ===", epoch); // test code
     });
 
     

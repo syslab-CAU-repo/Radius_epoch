@@ -547,8 +547,8 @@ pub async fn sync_leader_tx_orderer(
     epoch_leader_rpc_url: String, // new code
 ) {
     println!("=== 🔄⚙️ sync_leader_tx_orderer 시작 ⚙️🔄 ==="); // test code
-    println!("next_leader_tx_orderer_rpc_info.tx_orderer_address: {}", &leader_change_message.next_leader_tx_orderer_address); // test code
-    println!("current_leader_tx_orderer_address: {}", current_leader_tx_orderer_address); // test code
+    // println!("next_leader_tx_orderer_rpc_info.tx_orderer_address: {}", &leader_change_message.next_leader_tx_orderer_address); // test code
+    // println!("current_leader_tx_orderer_address: {}", current_leader_tx_orderer_address); // test code
 
     let mut other_cluster_rpc_url_list = cluster.get_other_cluster_rpc_url_list();
     if other_cluster_rpc_url_list.is_empty() {

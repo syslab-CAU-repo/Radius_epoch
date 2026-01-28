@@ -63,7 +63,7 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
         let is_next_leader =
             tx_orderer_address == self.leader_change_message.next_leader_tx_orderer_address;
 
-        println!("is_next_leader: {:?}", is_next_leader); // test code
+        // println!("is_next_leader: {:?}", is_next_leader); // test code
 
         // 🚀🚀🚀🚀🚀 mut_cluster_metadata synchronization start 🚀🚀🚀🚀🚀
         // 📌 platform_block_height ✅
@@ -80,12 +80,12 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
         )?;
 
         println!("🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
-        println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
-        println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
-        println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
+        // println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
+        // println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
+        // println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
         println!("💡mut_cluster_metadata.epoch(업데이트 전): {:?}", mut_cluster_metadata.epoch); // test code
-        println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
-        println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
+        // println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
+        // println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
         println!("🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
 
         mut_cluster_metadata.platform_block_height =
@@ -133,12 +133,12 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
         }
 
         println!("💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
-        println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
-        println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
-        println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
+        // println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
+        // println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
+        // println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
         println!("💡mut_cluster_metadata.epoch(업데이트 후): {:?}", mut_cluster_metadata.epoch); // test code
-        println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
-        println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
+        // println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
+        // println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
         println!("💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
 
         // === new code end ===
@@ -155,7 +155,7 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
             Error::GeneralError("epoch_leader_rpc_url not found".into())
         })?;
 
-        println!("epoch_leader_rpc_url: {:?}", epoch_leader_rpc_url); // test code
+        // println!("epoch_leader_rpc_url: {:?}", epoch_leader_rpc_url); // test code
 
         sync_leader_tx_orderer(
             context.clone(),
