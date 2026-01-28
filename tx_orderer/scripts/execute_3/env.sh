@@ -32,7 +32,7 @@ if [[ ! -f "$BIN_PATH" ]]; then
 fi
 
 # Operating tx_orderer private key
-TX_ORDERER_PRIVATE_KEY="0xea6c44ac03bff858b476bba40716402b03e41b8e97e276d1baec7c37d42484a0" # 5
+TX_ORDERER_PRIVATE_KEY="0xea6c44ac03bff858b476bba40716402b03e41b8e97e276d1baec7c37d42484a0"
 
 # TxOrderer
 TX_ORDERER_INTERNAL_RPC_URL="http://165.194.35.11:11104" # Internal IP - Please change this IP.
