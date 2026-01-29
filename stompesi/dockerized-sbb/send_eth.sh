@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # 1. 환경 설정
+CAST="$HOME/.foundry/bin/cast"
 RPC="http://127.0.0.1:8545"
 PK="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 
@@ -26,17 +27,17 @@ do
     echo "📍 대상 주소: $ADDR"
     
     # [Step 1] 전송 전 잔액 확인
-    PRE_BALANCE=$(cast balance "$ADDR" --ether --rpc-url "$RPC")
+    PRE_BALANCE=$($CAST balance "$ADDR" --ether --rpc-url "$RPC")
     echo "💰 전송 전 잔액: $PRE_BALANCE ETH"
     
     echo "📦 10 ETH 전송 중..."
     
     # [Step 2] 전송 실행 (성공 시에만 다음 단계 진행)
-    if cast send "$ADDR" --value 10ether --private-key "$PK" --rpc-url "$RPC" > /dev/null; then
+    if $CAST send "$ADDR" --value 10ether --private-key "$PK" --rpc-url "$RPC" > /dev/null; then
         echo "✅ 전송 성공!"
         
         # [Step 3] 전송 후 잔액 확인
-        POST_BALANCE=$(cast balance "$ADDR" --ether --rpc-url "$RPC")
+        POST_BALANCE=$($CAST balance "$ADDR" --ether --rpc-url "$RPC")
         echo "💵 전송 후 잔액: $POST_BALANCE ETH"
     else
         echo "❌ 전송 실패! 이 주소에서 문제가 발생하여 스크립트를 중단합니다."

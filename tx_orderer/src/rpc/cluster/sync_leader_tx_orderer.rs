@@ -170,7 +170,7 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
             Error::GeneralError("old_epoch is missing".into())
         })?;
 
-        println!("old_epoch: {:?}", old_epoch); // test code
+        // println!("old_epoch: {:?}", old_epoch); // test code
 
         // old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (이미 존재하지 않을 때만)
         if !mut_cluster_metadata.epoch_leader_map.contains_key(&old_epoch) {
@@ -223,15 +223,15 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
         // 📌 completed_batch_number ✅
 
         // === test code start ===
-        println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization before update 🔥🔥🔥🔥🔥"); // test code
-        println!("🔄🔄 mut_rollup_metadata.batch_number: {:?}", mut_rollup_metadata.batch_number); // test code
-        println!("🔄🔄 mut_rollup_metadata.transaction_order: {:?}", mut_rollup_metadata.transaction_order); // test code
-        println!("🔄🔄 mut_rollup_metadata.provided_batch_number: {:?}", mut_rollup_metadata.provided_batch_number); // test code
-        println!("🔄🔄 mut_rollup_metadata.provided_transaction_order: {:?}", mut_rollup_metadata.provided_transaction_order); // test code
-        println!("🔄🔄 mut_rollup_metadata.provided_epoch: {:?}", mut_rollup_metadata.provided_epoch); // test code
-        println!("🔄🔄 mut_rollup_metadata.completed_batch_number: {:?}", mut_rollup_metadata.completed_batch_number); // test code
-        println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization after update 🔥🔥🔥🔥🔥"); // test code
-        // === test code end === 
+        // println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization before update 🔥🔥🔥🔥🔥"); // test code
+        // println!("🔄🔄 mut_rollup_metadata.batch_number: {:?}", mut_rollup_metadata.batch_number); // test code
+        // println!("🔄🔄 mut_rollup_metadata.transaction_order: {:?}", mut_rollup_metadata.transaction_order); // test code
+        // println!("🔄🔄 mut_rollup_metadata.provided_batch_number: {:?}", mut_rollup_metadata.provided_batch_number); // test code
+        // println!("🔄🔄 mut_rollup_metadata.provided_transaction_order: {:?}", mut_rollup_metadata.provided_transaction_order); // test code
+        // println!("🔄🔄 mut_rollup_metadata.provided_epoch: {:?}", mut_rollup_metadata.provided_epoch); // test code
+        // println!("🔄🔄 mut_rollup_metadata.completed_batch_number: {:?}", mut_rollup_metadata.completed_batch_number); // test code
+        // println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization after update 🔥🔥🔥🔥🔥"); // test code
+        // === test code end ===
         
         mut_rollup_metadata.batch_number = self.batch_number; // 🚩 batch_number 
         mut_rollup_metadata.transaction_order = self.transaction_order; // 🚩 transaction_order 
@@ -242,14 +242,14 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
         mut_rollup_metadata.completed_batch_number = self.completed_batch_number; // new code -> 🚩 completed_batch_number 
 
         // === test code start ===
-        println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization before update 🔥🔥🔥🔥🔥"); // test code
-        println!("🔄🔄 mut_rollup_metadata.batch_number: {:?}", mut_rollup_metadata.batch_number); // test code
-        println!("🔄🔄 mut_rollup_metadata.transaction_order: {:?}", mut_rollup_metadata.transaction_order); // test code
-        println!("🔄🔄 mut_rollup_metadata.provided_batch_number: {:?}", mut_rollup_metadata.provided_batch_number); // test code
-        println!("🔄🔄 mut_rollup_metadata.provided_transaction_order: {:?}", mut_rollup_metadata.provided_transaction_order); // test code
-        println!("🔄🔄 mut_rollup_metadata.provided_epoch: {:?}", mut_rollup_metadata.provided_epoch); // test code
-        println!("🔄🔄 mut_rollup_metadata.completed_batch_number: {:?}", mut_rollup_metadata.completed_batch_number); // test code
-        println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization after update 🔥🔥🔥🔥🔥"); // test code
+        // println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization before update 🔥🔥🔥🔥🔥"); // test code
+        // println!("🔄🔄 mut_rollup_metadata.batch_number: {:?}", mut_rollup_metadata.batch_number); // test code
+        // println!("🔄🔄 mut_rollup_metadata.transaction_order: {:?}", mut_rollup_metadata.transaction_order); // test code
+        // println!("🔄🔄 mut_rollup_metadata.provided_batch_number: {:?}", mut_rollup_metadata.provided_batch_number); // test code
+        // println!("🔄🔄 mut_rollup_metadata.provided_transaction_order: {:?}", mut_rollup_metadata.provided_transaction_order); // test code
+        // println!("🔄🔄 mut_rollup_metadata.provided_epoch: {:?}", mut_rollup_metadata.provided_epoch); // test code
+        // println!("🔄🔄 mut_rollup_metadata.completed_batch_number: {:?}", mut_rollup_metadata.completed_batch_number); // test code
+        // println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization after update 🔥🔥🔥🔥🔥"); // test code
         // === test code end === 
 
         /*
