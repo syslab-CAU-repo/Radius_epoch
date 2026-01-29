@@ -21,6 +21,8 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
 
         let rollup_id = self.leader_change_message.rollup_id.clone();
 
+        println!("rollup_id: {:?}", rollup_id); // test code
+
         let rollup_metadata = match RollupMetadata::get(&rollup_id) {
             Ok(metadata) => metadata,
             Err(err) => {
@@ -34,7 +36,11 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
             }
         };
 
+        println!("⚙️⚙️ rollup_metadata get 성공"); // test code
+
         let rollup = Rollup::get(&rollup_id)?;
+
+        println!("⚙️⚙️ rollup get 성공"); // test code
 
         let cluster = Cluster::get(
             rollup.platform,
@@ -42,6 +48,8 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
             &rollup.cluster_id,
             self.leader_change_message.platform_block_height,
         )?;
+
+        println!("⚙️⚙️ cluster get 성공"); // test code
 
         let leader_tx_orderer_rpc_info = cluster
             .get_tx_orderer_rpc_info(&self.leader_change_message.next_leader_tx_orderer_address)
@@ -53,17 +61,23 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
                 Error::TxOrdererInfoNotFound
             })?;
 
+        println!("⚙️⚙️ leader_tx_orderer_rpc_info get 성공"); // test code
+
         let signer = context.get_signer(rollup.platform).await.map_err(|_| {
             tracing::error!("Signer not found for platform {:?}", rollup.platform);
             Error::SignerNotFound
         })?;
 
+        println!("⚙️⚙️ signer get 성공"); // test code
+
         let tx_orderer_address = signer.address().clone();
+
+        println!("⚙️⚙️ tx_orderer_address get 성공"); // test code
 
         let is_next_leader =
             tx_orderer_address == self.leader_change_message.next_leader_tx_orderer_address;
 
-        // println!("is_next_leader: {:?}", is_next_leader); // test code
+        println!("⚙️⚙️ is_next_leader: {:?}", is_next_leader); // test code
 
         // 🚀🚀🚀🚀🚀 mut_cluster_metadata synchronization start 🚀🚀🚀🚀🚀
         // 📌 platform_block_height ✅
@@ -79,14 +93,14 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
             &rollup.cluster_id,
         )?;
 
-        println!("🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
-        // println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
-        // println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
-        // println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
-        println!("💡mut_cluster_metadata.epoch(업데이트 전): {:?}", mut_cluster_metadata.epoch); // test code
-        // println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
-        // println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
-        println!("🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
+        println!("⚙️⚙️ 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
+        // println!("⚙️⚙️ mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
+        // println!("⚙️⚙️ mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
+        // println!("⚙️⚙️ mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
+        println!("⚙️⚙️ 💡mut_cluster_metadata.epoch(업데이트 전): {:?}", mut_cluster_metadata.epoch); // test code
+        // println!("⚙️⚙️ mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
+        // println!("⚙️⚙️ mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
+        println!("⚙️⚙️ 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
 
         mut_cluster_metadata.platform_block_height =
             self.leader_change_message.platform_block_height; // 🚩 platform_block_height 
@@ -132,14 +146,14 @@ impl RpcParameter<AppState> for SetLeaderTxOrderer {
             );
         }
 
-        println!("💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
-        // println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
-        // println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
-        // println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
-        println!("💡mut_cluster_metadata.epoch(업데이트 후): {:?}", mut_cluster_metadata.epoch); // test code
-        // println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
-        // println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
-        println!("💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
+        println!("⚙️⚙️ 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
+        // println!("⚙️⚙️ mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
+        // println!("⚙️⚙️ mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
+        // println!("⚙️⚙️ mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
+        println!("⚙️⚙️ 💡mut_cluster_metadata.epoch(업데이트 후): {:?}", mut_cluster_metadata.epoch); // test code
+        // println!("⚙️⚙️ mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
+        // println!("⚙️⚙️ mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
+        println!("⚙️⚙️ 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
 
         // === new code end ===
         // 💫💫💫💫💫 mut_cluster_metadata synchronization end 💫💫💫💫💫
