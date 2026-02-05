@@ -25,6 +25,7 @@ impl RpcParameter<AppState> for SendRawTransaction {
 
         // === test code begin ===
         println!("=== SendRawTransaction 시작 ===");
+        tracing::info!("=== SendRawTransaction 시작 ===");
         // println!("Rollup ID: {}", self.rollup_id);
         // println!("Transaction Type: {:?}", self.raw_transaction);
         // === test code end ===

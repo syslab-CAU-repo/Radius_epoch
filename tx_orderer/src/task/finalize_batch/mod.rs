@@ -107,7 +107,7 @@ async fn finalize_batch_task(
         Batch::put(&batch, rollup_id, batch_number)?;
         tracing::info!("Finalize batch DONE - {}, {}", rollup_id, batch_number);
 
-        submit_batch_commitment(context, &rollup, batch_number, &batch_commitment).await;
+        // submit_batch_commitment(context, &rollup, batch_number, &batch_commitment).await;
 
         break;
     }

@@ -66,6 +66,8 @@ impl RpcParameter<AppState> for GetRawTransactionList {
 
         let mut raw_transaction_list = Vec::new();
 
+        /* // old code comment out
+
         let rollup_id = self.leader_change_message.rollup_id.clone();
         // println!("LeaderChangeMessage rollup_id: {:?}", rollup_id); // test code
 
@@ -523,6 +525,8 @@ impl RpcParameter<AppState> for GetRawTransactionList {
 
         println!("=== GetRawTransactionList handler() 종료(노드 주소: {:?}) ===", current_tx_orderer_address); // test code
 
+        */ // old code comment out
+
         Ok(GetRawTransactionListResponse {
             raw_transaction_list,
         })
@@ -742,9 +746,9 @@ pub fn my_extract_raw_transactions(batch: Batch, epoch: u64, transactions_in_bat
                 RawTransaction::Eth(eth_tx) => {
                     match eth_tx.epoch {
                         Some(tx_epoch) => {
-                            if tx_epoch > epoch { // tx_epoch가 epoch보다 크면 처리해야 하는 트랜잭션이므로 카운트
+                            if tx_epoch > epoch { // tx_epoch가 epoch보다 크면 (앞으로) 처리해야 하는 트랜잭션이므로 카운트
                                 *transactions_in_batch += 1; // Transactions to be processed still in the batch
-                                None // tx_epoch가 epoch보다 크면 처리해야 하는 트랜잭션이므로 카운트하고 트랜잭션을 반환하지 않음
+                                None // tx_epoch가 epoch보다 크면 (앞으로)처리해야 하는 트랜잭션이므로 카운트하고 트랜잭션을 반환하지 않음
                             }
                             else {
                                 Some(eth_tx.raw_transaction) // tx_epoch가 epoch보다 작거나 같으면 트랜잭션을 반환
@@ -857,12 +861,14 @@ fn fetch_and_append_transactions(
 pub fn my_fetch_and_append_transactions(
     rollup_id: &RollupId,
     batch_number: u64,
-    start_transaction_order: u64,
+    current_provided_transaction_order: &mut i64,
     last_valid_transaction_order: i64,
     raw_transaction_list: &mut Vec<String>,
     epoch: &u64,
 ) -> Result<(), RpcError> {
-    if last_valid_transaction_order < start_transaction_order as i64 {
+    let start_transaction_order: u64 = (*current_provided_transaction_order + 1) as u64; // (02.05 수정사항) my_fetch_and_append_transactions에서 current_provided_transaction_order 갱신 로직 추가
+
+    if last_valid_transaction_order < start_transaction_order as i64{
         return Ok(());
     }
 
@@ -877,12 +883,13 @@ pub fn my_fetch_and_append_transactions(
                 // 주어진 epoch보다 큰 epoch를 가진 RawTransaction을 거르고 (필터링)
                 match eth_tx.epoch {
                     Some(tx_epoch) if tx_epoch > *epoch => {
-                        // epoch가 주어진 epoch보다 크면 제외 (건너뛰기)
-                        continue;
+                        // tx_epoch가 주어진 epoch보다 크면 반복문 종료
+                        break; // (02.05 수정사항) continue 대신 break 사용
                     }
                     _ => {
-                        // epoch가 없거나, epoch가 주어진 epoch보다 작거나 같으면 포함
+                        // tx_epoch가 없거나, tx_epoch가 주어진 epoch보다 작거나 같으면 포함
                         raw_transaction_list.push(eth_tx.raw_transaction);
+                        *current_provided_transaction_order += 1; // (02.05 수정사항) my_fetch_and_append_transactions에서 current_provided_transaction_order 갱신 로직 추가
                     }
                 }
             }

@@ -38,6 +38,7 @@ async fn main() {
     // === new code end ===
     */
 
+    // === cross-server test code start ===
     let rpc_urls = [
         "http://165.194.35.15:11103", // sys5(TX_ORDERER)
         "http://165.194.35.11:11103", // sys2(TX_ORDERER_2)
@@ -46,6 +47,7 @@ async fn main() {
         "http://165.194.35.14:11106", // sys4(TX_ORDERER_5)
         // "http://127.0.0.1:5003",
     ];
+    // === cross-server test code end ===
 
     /* // old code
     let tx_orderer_addresses = [
@@ -68,6 +70,7 @@ async fn main() {
     // === new code end ===
     */
 
+    // === cross-server test code start ===
     let tx_orderer_addresses = [
         "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720", // sys5(TX_ORDERER)
         "0xcd3B766CCDd6AE721141F452C550Ca635964ce71", // sys2(TX_ORDERER_2)
@@ -75,9 +78,10 @@ async fn main() {
         "0xbDA5747bFD65F08deb54cb465eB87D40e51B197E", // sys4(TX_ORDERER_4)
         "0xdD2FD4581271e230360230F9337D5c0430Bf44C0", // sys4(TX_ORDERER_5)
     ];
+    // === cross-server test code end ===
 
-    let l1_block_generation_interval = 12;
-    let block_generation_interval = 3;
+    let l1_block_generation_interval = 1000;
+    let block_generation_interval = 250;
 
     let mut rollup_block_height = 1;
     let mut block_generation_count = 0;
@@ -172,7 +176,7 @@ async fn main() {
                 }
 
                 block_generation_count += 1;
-                sleep(Duration::from_secs(block_generation_interval)).await;
+                sleep(Duration::from_millis(block_generation_interval)).await;
             },
             Err(e) => println!("Failed to convert hex to u64: {}", e),
         }

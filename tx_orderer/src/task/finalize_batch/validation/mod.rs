@@ -11,6 +11,7 @@ pub async fn submit_batch_commitment(
     batch_number: u64,
     batch_commitment: &[u8; 32],
 ) {
+    return ; 
     // let validation_platform = context
     //     .get_validation_platform(rollup.cluster_id, rollup.rollup_id)
     //     .await

@@ -70,7 +70,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             }
         };
 
-        let mut epoch = rollup_metadata.provided_epoch;
+        let mut epoch = rollup_metadata.provided_epoch; // 초기화(값은 의미없음)
 
         // 현재까지 처리된 가장 최신의 epoch를 받아옴(CanProvideEpochInfo에서 받아옴)
         if let Ok(can_provide_epoch) = CanProvideEpochInfo::get(&rollup_id) {
@@ -98,15 +98,15 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         
         println!("last_completed_batch_number: {:?}", rollup_metadata.completed_batch_number); // test code
 
-        let last_completed_batch_number = rollup_metadata.completed_batch_number; 
+        let last_completed_batch_number = rollup_metadata.completed_batch_number; // 저번 get 요청에서 처리된 가장 최신의 batch 번호
 
-        let mut current_completed_batch_number = last_completed_batch_number; 
-        let mut current_provided_batch_number = last_completed_batch_number + 1; 
+        let mut current_completed_batch_number = last_completed_batch_number; // rollup_metadata.completed_batch_number 갱신을 위한 mut 변수
+        let mut current_provided_batch_number = last_completed_batch_number + 1; // 현재 처리 시작할 batch 번호
 
         println!("current_completed_batch_number(Batch 순회 전): {:?}", current_completed_batch_number); // test code
         println!("current_provided_batch_number(Batch 순회 전): {:?}", current_provided_batch_number); // test code
 
-        let mut current_provided_transaction_order = -1;
+        let mut current_provided_transaction_order = -1; // 현재 처리 시작할 transaction 번호
         
         let mut iteration_count = 0; // test code
 
@@ -121,14 +121,16 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             ));
 
             if transactions_in_batch == 0 { // All transactions in the batch have been processed
-                current_completed_batch_number += 1;
+                current_completed_batch_number += 1; // TODO: current_completed_batch_number 갱신 로직 변경 필요 -> 필요없음
             }
             
-            current_provided_batch_number += 1;
+            current_provided_batch_number += 1; 
             current_provided_transaction_order = -1;
 
             iteration_count += 1; // test code
         }
+
+        current_provided_transaction_order = rollup_metadata.provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 지난 요청에서 어디까지 진행됐는지 받아옴
 
         println!("current_completed_batch_number(Batch 순회 후): {:?}", current_completed_batch_number); // test code
         println!("current_provided_batch_number(Batch 순회 후): {:?}", current_provided_batch_number); // test code
@@ -147,11 +149,18 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 my_fetch_and_append_transactions(
                     &rollup_id,
                     current_provided_batch_number as u64,
-                    (current_provided_transaction_order + 1) as u64,
+                    &mut current_provided_transaction_order, 
                     valid_end_transaction_order,
                     &mut raw_transaction_epoch_list,
                     &epoch,
                 )?;
+
+                if current_provided_transaction_order
+                    == rollup.max_transaction_count_per_batch as i64 - 1
+                {
+                    current_provided_batch_number += 1;
+                    current_provided_transaction_order = -1;
+                }
             }
         }
 
@@ -163,7 +172,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         }
 
         mut_rollup_metadata.provided_batch_number = current_provided_batch_number as u64;
-        mut_rollup_metadata.provided_transaction_order = current_provided_transaction_order;
+        mut_rollup_metadata.provided_transaction_order = current_provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 이번번 요청에서 어디까지 진행됐는지 저장
 
         mut_rollup_metadata.completed_batch_number = current_completed_batch_number; // new code
         mut_rollup_metadata.provided_epoch = epoch; // new code
