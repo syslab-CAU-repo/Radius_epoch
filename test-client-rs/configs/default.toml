@@ -1,4 +1,4 @@
-total_transactions = 10000
+total_transactions = 20000
 connection_threads = 4
 connections = 20
 duration = 60

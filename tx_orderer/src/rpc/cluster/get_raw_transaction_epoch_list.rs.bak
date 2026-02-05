@@ -7,9 +7,6 @@ use std::{
 use super::SyncRollupMetadata; // new code
 use crate::rpc::prelude::*;
 
-use super::LeaderChangeMessage; // new code
-use crate::rpc::{cluster::sync_leader_tx_orderer, prelude::*};
-
 use radius_sdk::{json_rpc::client::Priority, signature::Address};
 use tokio::{sync::mpsc::UnboundedReceiver, time::Instant};
 
@@ -32,7 +29,6 @@ use super::my_fetch_and_append_transactions; // new code
 pub struct GetRawTransactionEpochList {
     pub rollup_id: RollupId,
     pub rollup_signature: Signature,
-    pub leader_change_message: LeaderChangeMessage,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -74,8 +70,6 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             }
         };
 
-        let rollup = Rollup::get(&rollup_id)?;
-
         let mut epoch = rollup_metadata.provided_epoch; // 초기화(값은 의미없음)
 
         // 현재까지 처리된 가장 최신의 epoch를 받아옴(CanProvideEpochInfo에서 받아옴)
@@ -98,17 +92,19 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             });
         }
 
-        // println!("💡epoch(CanProvideEpochInfo에서 받아온 값): {:?}", epoch); // test code
+        println!("💡epoch(CanProvideEpochInfo에서 받아온 값): {:?}", epoch); // test code
+
+        let rollup = Rollup::get(&rollup_id)?;
         
-        // println!("last_completed_batch_number: {:?}", rollup_metadata.completed_batch_number); // test code
+        println!("last_completed_batch_number: {:?}", rollup_metadata.completed_batch_number); // test code
 
         let last_completed_batch_number = rollup_metadata.completed_batch_number; // 저번 get 요청에서 처리된 가장 최신의 batch 번호
 
         let mut current_completed_batch_number = last_completed_batch_number; // rollup_metadata.completed_batch_number 갱신을 위한 mut 변수
         let mut current_provided_batch_number = last_completed_batch_number + 1; // 현재 처리 시작할 batch 번호
 
-        // println!("current_completed_batch_number(Batch 순회 전): {:?}", current_completed_batch_number); // test code
-        // println!("current_provided_batch_number(Batch 순회 전): {:?}", current_provided_batch_number); // test code
+        println!("current_completed_batch_number(Batch 순회 전): {:?}", current_completed_batch_number); // test code
+        println!("current_provided_batch_number(Batch 순회 전): {:?}", current_provided_batch_number); // test code
 
         let mut current_provided_transaction_order = -1; // 현재 처리 시작할 transaction 번호
         
@@ -136,9 +132,9 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
 
         current_provided_transaction_order = rollup_metadata.provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 지난 요청에서 어디까지 진행됐는지 받아옴
 
-        // println!("current_completed_batch_number(Batch 순회 후): {:?}", current_completed_batch_number); // test code
-        // println!("current_provided_batch_number(Batch 순회 후): {:?}", current_provided_batch_number); // test code
-        // println!("current_provided_transaction_order(Batch 순회 후): {:?}", current_provided_transaction_order); // test code
+        println!("current_completed_batch_number(Batch 순회 후): {:?}", current_completed_batch_number); // test code
+        println!("current_provided_batch_number(Batch 순회 후): {:?}", current_provided_batch_number); // test code
+        println!("current_provided_transaction_order(Batch 순회 후): {:?}", current_provided_transaction_order); // test code
 
         if let Ok(can_provide_transaction_info) = CanProvideTransactionInfo::get(&rollup_id) {
             if let Some(can_provide_transaction_orderers) = can_provide_transaction_info
@@ -168,13 +164,6 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             }
         }
 
-        let cluster = Cluster::get(
-            rollup.platform,
-            rollup.liveness_service_provider,
-            &rollup.cluster_id,
-            self.leader_change_message.platform_block_height,
-        )?;
-
         let mut mut_rollup_metadata = RollupMetadata::get_mut(&rollup_id)?;
 
         let mut batch_number_list_to_delete = Vec::new();
@@ -183,20 +172,10 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         }
 
         mut_rollup_metadata.provided_batch_number = current_provided_batch_number as u64;
-        mut_rollup_metadata.provided_transaction_order = current_provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 이번 요청에서 어디까지 진행됐는지 저장
+        mut_rollup_metadata.provided_transaction_order = current_provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 이번번 요청에서 어디까지 진행됐는지 저장
 
         mut_rollup_metadata.completed_batch_number = current_completed_batch_number; // new code
         mut_rollup_metadata.provided_epoch = epoch; // new code
-
-        let leader_tx_orderer_rpc_info = cluster
-            .get_tx_orderer_rpc_info(&self.leader_change_message.next_leader_tx_orderer_address)
-            .ok_or_else(|| {
-                tracing::error!(
-                    "TxOrderer RPC info not found for address {:?}",
-                    self.leader_change_message.next_leader_tx_orderer_address
-                );
-                Error::TxOrdererInfoNotFound
-            })?;
 
         let signer = context.get_signer(rollup.platform).await.map_err(|_| {
             tracing::error!("Signer not found for platform {:?}", rollup.platform);
@@ -205,17 +184,6 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
 
         let tx_orderer_address = signer.address().clone();
 
-        let is_next_leader =
-            tx_orderer_address == self.leader_change_message.next_leader_tx_orderer_address;
-
-        let mut mut_cluster_metadata = ClusterMetadata::get_mut(
-            rollup.platform,
-            rollup.liveness_service_provider,
-            &rollup.cluster_id,
-        )?;
-
-        /*
-        // ??? 이건 original 코드에는 없는 내용
         let cluster_metadata = ClusterMetadata::get(
             rollup.platform,
             rollup.liveness_service_provider,
@@ -225,15 +193,12 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             tracing::error!("Failed to get cluster metadata: {:?}", error);
             Error::ClusterMetadataNotFound
         })?;
-        // ???
 
-        */
-
-        if mut_cluster_metadata.is_leader == false {
+        if cluster_metadata.is_leader == false {
             println!("*** if mut_cluster_metadata.is_leader == false ***"); // test code
 
             if let Some(current_leader_tx_orderer_rpc_info) =
-                mut_cluster_metadata.leader_tx_orderer_rpc_info.clone()
+                cluster_metadata.leader_tx_orderer_rpc_info.clone()
             {
                 let current_leader_tx_orderer_cluster_rpc_url = current_leader_tx_orderer_rpc_info
                     .cluster_rpc_url
@@ -277,97 +242,10 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             } else {
                 tracing::warn!(
                     "Current leader tx orderer RPC info not found for address {:?}",
-                    self.leader_change_message.current_leader_tx_orderer_address
+                    cluster_metadata.leader_tx_orderer_rpc_info.clone().unwrap().tx_orderer_address
                 );
             }
         }
-
-        mut_cluster_metadata.platform_block_height =
-            self.leader_change_message.platform_block_height; // 🚩 platform_block_height 
-        mut_cluster_metadata.is_leader = is_next_leader; // 🚩 is_leader 
-        mut_cluster_metadata.leader_tx_orderer_rpc_info = Some(leader_tx_orderer_rpc_info.clone()); // 🚩 leader_tx_orderer_rpc_info 
-
-        // === new code start ===
-        let old_epoch = if let Some(epoch) = mut_cluster_metadata.epoch {
-            epoch
-        } else {
-            tracing::error!("Cannot assign an old epoch — the epoch in ClusterMetadata is missing for some reason.");
-            return Ok(GetRawTransactionEpochListResponse {
-                raw_transaction_list: Vec::new(),
-            });
-        };
-
-        // old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (이미 존재하지 않을 때만)
-        if !mut_cluster_metadata.epoch_leader_map.contains_key(&old_epoch) {
-            println!("old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (이미 존재하지 않을 때만)"); // test code
-            if let Some(current_leader_rpc_info) = cluster.get_tx_orderer_rpc_info(&self.leader_change_message.current_leader_tx_orderer_address) {
-                if let Some(cluster_rpc_url) = &current_leader_rpc_info.cluster_rpc_url {
-                    mut_cluster_metadata.epoch_leader_map.insert(old_epoch, cluster_rpc_url.clone());
-                    println!("old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 완료"); // test code
-                }
-            }
-        }
-
-        mut_cluster_metadata.epoch = Some(old_epoch + 1); // 🚩 epoch 
-
-        let new_epoch = if let Some(epoch) = mut_cluster_metadata.epoch {
-            epoch
-        } else {
-            tracing::error!("Cannot assign an old epoch — the epoch in ClusterMetadata is missing for some reason.");
-            return Ok(GetRawTransactionEpochListResponse {
-                raw_transaction_list: Vec::new(),
-            });
-        };
-
-        // new_epoch의 리더 RPC URL을 epoch_leader_map에 저장
-        if let Some(cluster_rpc_url) = &leader_tx_orderer_rpc_info.cluster_rpc_url {
-            mut_cluster_metadata.epoch_leader_map.insert(new_epoch, cluster_rpc_url.clone()); // 🚩 epoch_leader_map
-        } else {
-            tracing::error!(
-                "cluster_rpc_url not found for new leader - rollup_id: {:?}, new_epoch: {}",
-                self.leader_change_message.rollup_id,
-                new_epoch
-            );
-        }
-        // === new code end ===
-
-        // old_epoch의 리더 RPC URL 가져오기
-        let epoch_leader_rpc_url = mut_cluster_metadata.epoch_leader_map.get(&old_epoch).cloned().ok_or_else(|| {
-            tracing::error!(
-                "epoch_leader_rpc_url not found for old_epoch: {:?} - rollup_id: {:?}, cluster_id: {:?}",
-                old_epoch,
-                self.leader_change_message.rollup_id,
-                rollup.cluster_id
-            );
-            Error::GeneralError("epoch_leader_rpc_url not found".into())
-        })?;
-
-        /* // ??? 이거 들어가야함???
-        let signer = context.get_signer(rollup.platform).await?;
-        let current_tx_orderer_address = signer.address();
-        */
-
-        sync_leader_tx_orderer(
-            context.clone(),
-            cluster,
-            // current_tx_orderer_address, // old code(not used)
-            self.leader_change_message.clone(),
-            self.rollup_signature,
-            rollup_metadata.batch_number,
-            rollup_metadata.transaction_order,
-            rollup_metadata.provided_batch_number,
-            rollup_metadata.provided_transaction_order,
-            rollup_metadata.provided_epoch,
-            rollup_metadata.completed_batch_number,
-            &self.leader_change_message.current_leader_tx_orderer_address,
-            old_epoch,
-            new_epoch,
-            epoch_leader_rpc_url.clone(), // 사용 안 함
-        )
-        .await;
-
-        /*
-        // ??? --> 이거 get_raw_transaction_epoch_list 따로 디커플링했을 때 추가한 코드 같은데 sync_leader_tx_orderer 함수에서 처리되는 거니까 이거 필요없음???
 
         if let Err(error) = sync_rollup_metadata(
             context.clone(),
@@ -388,10 +266,6 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             );
         }
 
-        */
-
-        mut_cluster_metadata.update()?;
-
         let _ = mut_rollup_metadata.update().map_err(|error| {
             tracing::error!(
                 "rollup_metadata update error - rollup id: {:?}, error: {:?}",
@@ -399,13 +273,6 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 error
             );
         });
-
-        send_end_signal_to_epoch_leader(
-            context.clone(),
-            self.leader_change_message.rollup_id.clone(),
-            old_epoch,
-            epoch_leader_rpc_url,
-        );
 
         let end_get_raw_transaction_epoch_list_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
