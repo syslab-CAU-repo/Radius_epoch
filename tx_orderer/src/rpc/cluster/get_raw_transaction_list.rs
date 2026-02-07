@@ -737,7 +737,7 @@ fn extract_raw_transactions(batch: Batch, start_transaction_order: u64) -> Vec<S
 }
 
 // === new code start ===
-pub fn my_extract_raw_transactions(batch: Batch, epoch: u64, transactions_in_batch: &mut i32) -> Vec<String> {
+pub fn my_extract_raw_transactions(batch: Batch, epoch: u64, provided_epoch: i64, transactions_in_batch: &mut i32) -> Vec<String> {
     batch
         .raw_transaction_list
         .into_iter()
@@ -751,7 +751,12 @@ pub fn my_extract_raw_transactions(batch: Batch, epoch: u64, transactions_in_bat
                                 None // tx_epoch가 epoch보다 크면 (앞으로)처리해야 하는 트랜잭션이므로 카운트하고 트랜잭션을 반환하지 않음
                             }
                             else {
-                                Some(eth_tx.raw_transaction) // tx_epoch가 epoch보다 작거나 같으면 트랜잭션을 반환
+                                // provided_epoch: -1 = 아직 보낸 epoch 없음, 0+ = 직전에 보낸 epoch 최댓값. -1일 땐 이 조건으로 걸러내지 않음
+                                if provided_epoch >= 0 && tx_epoch < provided_epoch as u64 {
+                                    None // tx_epoch가 provided_epoch보다 작으면 (지난 트랜잭션) 반환하지 않음
+                                } else {
+                                    Some(eth_tx.raw_transaction) // tx_epoch가 epoch 이하이고 provided_epoch 미만이 아니면 반환
+                                }
                             }
                         }
                         _ => None,
@@ -767,17 +772,17 @@ pub fn get_last_valid_completed_epoch(
     completed_epoch: &BTreeSet<u64>,
     provided_epoch: u64,
 ) -> Result<u64, Error> {
-    println!("get_last_valid_completed_epoch 시작"); // test code
+    // println!("get_last_valid_completed_epoch 시작"); // test code
 
     let mut last_valid_epoch = provided_epoch;
 
-    println!("  last_valid_epoch: {:?}", last_valid_epoch); // test code
+    // println!("  last_valid_epoch: {:?}", last_valid_epoch); // test code
 
-    let mut iteration_count = 0;
+    // let mut iteration_count = 0; // test code
 
     for &epoch in completed_epoch {
         // println!("  {:?}th iteration(epoch: {:?})", iteration_count, epoch); // test code
-        iteration_count += 1; // test code
+        // iteration_count += 1; // test code
         
         if epoch == last_valid_epoch + 1 {
             // println!("  if epoch == last_valid_epoch + 1"); // test code
@@ -785,14 +790,14 @@ pub fn get_last_valid_completed_epoch(
             last_valid_epoch += 1;
             // println!("  last_valid_epoch after: {:?}", last_valid_epoch); // test code
         } else if epoch > last_valid_epoch {
-            println!("  if epoch > last_valid_epoch"); // test code
+            // println!("  if epoch > last_valid_epoch"); // test code
             break;
         }
     }
 
-    println!("  last_valid_epoch after iteration: {:?}", last_valid_epoch); // test code
+    // println!("  last_valid_epoch after iteration: {:?}", last_valid_epoch); // test code
 
-    println!("get_last_valid_completed_epoch 종료"); // test code
+    // println!("get_last_valid_completed_epoch 종료"); // test code
 
     Ok(last_valid_epoch)
 }
@@ -865,6 +870,7 @@ pub fn my_fetch_and_append_transactions(
     last_valid_transaction_order: i64,
     raw_transaction_list: &mut Vec<String>,
     epoch: &u64,
+    provided_epoch: i64,
 ) -> Result<(), RpcError> {
     let start_transaction_order: u64 = (*current_provided_transaction_order + 1) as u64; // (02.05 수정사항) my_fetch_and_append_transactions에서 current_provided_transaction_order 갱신 로직 추가
 
@@ -882,15 +888,25 @@ pub fn my_fetch_and_append_transactions(
             RawTransaction::Eth(eth_tx) => {
                 // 주어진 epoch보다 큰 epoch를 가진 RawTransaction을 거르고 (필터링)
                 match eth_tx.epoch {
-                    Some(tx_epoch) if tx_epoch > *epoch => {
-                        // tx_epoch가 주어진 epoch보다 크면 반복문 종료
-                        break; // (02.05 수정사항) continue 대신 break 사용
+                    Some(tx_epoch) => {
+                        if tx_epoch > *epoch {
+                            continue; // tx_epoch가 주어진 epoch보다 크면 건너뛰기
+                            // (02.05 수정사항) continue 대신 break 사용
+                            // (02.07 수정사항) 다시 continue 사용
+                        }
+                        else {
+                            if provided_epoch >= 0 && tx_epoch < provided_epoch as u64 {
+                                // tx_epoch가 주어진 epoch보다 작거나 같으면 포함
+                                raw_transaction_list.push(eth_tx.raw_transaction);
+                                // *current_provided_transaction_order += 1; // (02.05 수정사항) my_fetch_and_append_transactions에서 current_provided_transaction_order 갱신 로직 추가
+                                // (02.07 수정사항) current_provided_transaction_order 갱신 로직 주석 처리 
+                                // 이유: completed_epoch에 포함된 epoch는 다음 요청에서는 provided_epoch에 포함될 것이기 때문에 다시 볼 일이 없을 것. 
+                                // 그러므로 CanProvideTransactionInfo의 모든 트랜잭션을 다 봐야 함.
+                                // 따라서 current_provided_transaction_order를 갱신할 필요가 없음.
+                            }
+                        }
                     }
-                    _ => {
-                        // tx_epoch가 없거나, tx_epoch가 주어진 epoch보다 작거나 같으면 포함
-                        raw_transaction_list.push(eth_tx.raw_transaction);
-                        *current_provided_transaction_order += 1; // (02.05 수정사항) my_fetch_and_append_transactions에서 current_provided_transaction_order 갱신 로직 추가
-                    }
+                    _ => {}
                 }
             }
             RawTransaction::EthBundle(EthRawBundleTransaction(data)) => {

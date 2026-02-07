@@ -33,6 +33,19 @@ impl CanProvideEpochInfo {
         Ok(())
     }
 }
+
+#[derive(Clone, Debug, Deserialize, Serialize, Model)]
+#[kvstore(key(rollup_id: &RollupId))]
+pub struct ProvidedEpochInfo {
+    pub provided_epoch: i64,
+}
+
+impl Default for ProvidedEpochInfo {
+    fn default() -> Self {
+        Self { provided_epoch: -1 }
+    }
+}
+
 // === new code end ===
 
 #[derive(Clone, Debug, Deserialize, Serialize, Model)]
@@ -97,7 +110,7 @@ pub struct RollupMetadata {
     pub provided_transaction_order: i64,
 
     pub completed_batch_number: i64, // new code
-    pub provided_epoch: u64, // new code
+    pub provided_epoch: u64, // new code, (02.07 수정사항) 이 변수의 의미: 저번 실행까지 rollup에 전달된 epoch 최댓값
 }
 
 impl Default for RollupMetadata {

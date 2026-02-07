@@ -99,7 +99,11 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         }
 
         // println!("💡epoch(CanProvideEpochInfo에서 받아온 값): {:?}", epoch); // test code
-        
+
+        let mut provided_epoch = ProvidedEpochInfo::get(&rollup_id)
+            .map(|info| info.provided_epoch)
+            .unwrap_or(-1);
+
         // println!("last_completed_batch_number: {:?}", rollup_metadata.completed_batch_number); // test code
 
         let last_completed_batch_number = rollup_metadata.completed_batch_number; // 저번 get 요청에서 처리된 가장 최신의 batch 번호
@@ -109,8 +113,6 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
 
         // println!("current_completed_batch_number(Batch 순회 전): {:?}", current_completed_batch_number); // test code
         // println!("current_provided_batch_number(Batch 순회 전): {:?}", current_provided_batch_number); // test code
-
-        let mut current_provided_transaction_order = -1; // 현재 처리 시작할 transaction 번호
         
         let mut iteration_count = 0; // test code
 
@@ -121,6 +123,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             raw_transaction_epoch_list.extend(my_extract_raw_transactions(
                 batch,
                 epoch,
+                provided_epoch,
                 &mut transactions_in_batch,
             ));
 
@@ -129,12 +132,11 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             }
             
             current_provided_batch_number += 1; 
-            current_provided_transaction_order = -1;
 
             iteration_count += 1; // test code
         }
 
-        current_provided_transaction_order = rollup_metadata.provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 지난 요청에서 어디까지 진행됐는지 받아옴
+        let mut current_provided_transaction_order = rollup_metadata.provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 지난 요청에서 어디까지 진행됐는지 받아옴
 
         // println!("current_completed_batch_number(Batch 순회 후): {:?}", current_completed_batch_number); // test code
         // println!("current_provided_batch_number(Batch 순회 후): {:?}", current_provided_batch_number); // test code
@@ -157,6 +159,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                     valid_end_transaction_order,
                     &mut raw_transaction_epoch_list,
                     &epoch,
+                    provided_epoch,
                 )?;
 
                 if current_provided_transaction_order

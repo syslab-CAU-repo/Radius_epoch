@@ -80,8 +80,13 @@ async fn main() {
     ];
     // === cross-server test code end ===
 
+    let l1_block_generation_interval = 12;
+    let block_generation_interval = 3;
+
+    /* // 한대표님이 알려주신 세팅
     let l1_block_generation_interval = 1000;
     let block_generation_interval = 250;
+    */ 
 
     let mut rollup_block_height = 1;
     let mut block_generation_count = 0;
@@ -138,7 +143,7 @@ async fn main() {
                 // === new code start ===
                 let request_body = json!({
                     "jsonrpc": "2.0",
-                    "method": "set_leader_tx_orderer",
+                    "method": "get_raw_transaction_epoch_list",
                     "params": {
                         "leader_change_message": {
                             "rollup_id": rollup_id,
@@ -147,7 +152,8 @@ async fn main() {
                             "current_leader_tx_orderer_address": tx_orderer_addresses[current_leader_tx_orderer_index],
                             "next_leader_tx_orderer_address": tx_orderer_addresses[next_leader_tx_orderer_index],
                         },
-                        "rollup_signature": "0xc6bA578acFF1eA914A6a727b2F20776eB4ad61EE333333333333333333333333c6bA578acFF1eA914A6a727b2F20776eB4ad61EE33333333333333333333333333"
+                        "rollup_signature": "0xc6bA578acFF1eA914A6a727b2F20776eB4ad61EE333333333333333333333333c6bA578acFF1eA914A6a727b2F20776eB4ad61EE33333333333333333333333333",
+                        "rollup_id": rollup_id,
                     },
                     "id": 1
                 });
@@ -176,7 +182,8 @@ async fn main() {
                 }
 
                 block_generation_count += 1;
-                sleep(Duration::from_millis(block_generation_interval)).await;
+                // sleep(Duration::from_millis(block_generation_interval)).await;
+                sleep(Duration::from_secs(block_generation_interval)).await;
             },
             Err(e) => println!("Failed to convert hex to u64: {}", e),
         }
