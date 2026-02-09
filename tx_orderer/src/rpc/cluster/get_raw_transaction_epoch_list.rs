@@ -4,7 +4,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use super::SyncRollupMetadata; // new code
+use super::{SyncRollupMetadata}; // new code
 use crate::rpc::prelude::*;
 
 use super::LeaderChangeMessage; // new code
@@ -25,8 +25,10 @@ use crate::{
 use super::send_end_signal_to_epoch_leader; // new code
 use super::get_last_valid_completed_epoch; // new code
 use super::my_extract_raw_transactions; // new code
+use super::my_extract_raw_transactions_with_meta; // new code
 use super::get_last_valid_transaction_order; // new code
 use super::my_fetch_and_append_transactions; // new code
+use super::my_fetch_and_append_transactions_with_meta; // new code
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GetRawTransactionEpochList {
@@ -35,10 +37,20 @@ pub struct GetRawTransactionEpochList {
     pub leader_change_message: LeaderChangeMessage,
 }
 
+// === test code start ===
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct RawTransactionMeta {
+    pub epoch: Option<u64>,
+    pub batch_number: u64,
+    pub transaction_order: u64,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct GetRawTransactionEpochListResponse {
-    pub raw_transaction_list: Vec<String>,
+    //  raw_transaction_list: Vec<String>,
+    pub raw_transaction_meta_list: Vec<RawTransactionMeta>, // test code
 }
+// === test code end ===
 
 impl RpcParameter<AppState> for GetRawTransactionEpochList {
     type Response = GetRawTransactionEpochListResponse;
@@ -56,6 +68,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             .as_nanos();
 
         let mut raw_transaction_epoch_list = Vec::new();
+        let mut raw_transaction_meta_list = Vec::new();
 
         let rollup_id = self.rollup_id.clone();
 
@@ -69,7 +82,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 );
 
                 return Ok(GetRawTransactionEpochListResponse {
-                    raw_transaction_list: Vec::new(),
+                    // raw_transaction_list: Vec::new(),
+                    raw_transaction_meta_list: Vec::new(),
                 });
             }
         };
@@ -87,20 +101,22 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 Err(err) => {
                     tracing::error!("Failed to get epoch - rollup_id: {:?} / error: {:?}", rollup_id, err);
                     return Ok(GetRawTransactionEpochListResponse {
-                        raw_transaction_list: Vec::new(),
+                        // raw_transaction_list: Vec::new(),
+                        raw_transaction_meta_list: Vec::new(),
                     });
                 }
             };
         } else {
             tracing::error!("Failed to get can_provide_epoch - rollup_id: {:?}", rollup_id);
             return Ok(GetRawTransactionEpochListResponse {
-                raw_transaction_list: Vec::new(),
+                // raw_transaction_list: Vec::new(),
+                raw_transaction_meta_list: Vec::new(),
             });
         }
 
         // println!("💡epoch(CanProvideEpochInfo에서 받아온 값): {:?}", epoch); // test code
 
-        let mut provided_epoch = ProvidedEpochInfo::get(&rollup_id)
+        let provided_epoch = ProvidedEpochInfo::get(&rollup_id)
             .map(|info| info.provided_epoch)
             .unwrap_or(-1);
 
@@ -120,12 +136,17 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             println!("= {:?}th interation =", iteration_count); // test code
 
             let mut transactions_in_batch = 0;
-            raw_transaction_epoch_list.extend(my_extract_raw_transactions(
+            let extracted = my_extract_raw_transactions_with_meta(
                 batch,
                 epoch,
                 provided_epoch,
+                current_provided_batch_number as u64,
                 &mut transactions_in_batch,
-            ));
+            );
+            for (raw_transaction, meta) in extracted {
+                raw_transaction_epoch_list.push(raw_transaction);
+                raw_transaction_meta_list.push(meta);
+            }
 
             if transactions_in_batch == 0 { // All transactions in the batch have been processed
                 current_completed_batch_number += 1; // TODO: current_completed_batch_number 갱신 로직 변경 필요 -> 필요없음
@@ -152,12 +173,13 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                     current_provided_transaction_order,
                 );
         
-                my_fetch_and_append_transactions(
+                my_fetch_and_append_transactions_with_meta(
                     &rollup_id,
                     current_provided_batch_number as u64,
                     &mut current_provided_transaction_order, 
                     valid_end_transaction_order,
                     &mut raw_transaction_epoch_list,
+                    &mut raw_transaction_meta_list,
                     &epoch,
                     provided_epoch,
                 )?;
@@ -296,7 +318,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         } else {
             tracing::error!("Cannot assign an old epoch — the epoch in ClusterMetadata is missing for some reason.");
             return Ok(GetRawTransactionEpochListResponse {
-                raw_transaction_list: Vec::new(),
+                // raw_transaction_list: Vec::new(),
+                raw_transaction_meta_list: Vec::new(),
             });
         };
 
@@ -318,7 +341,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         } else {
             tracing::error!("Cannot assign an old epoch — the epoch in ClusterMetadata is missing for some reason.");
             return Ok(GetRawTransactionEpochListResponse {
-                raw_transaction_list: Vec::new(),
+                // raw_transaction_list: Vec::new(),
+                raw_transaction_meta_list: Vec::new(),
             });
         };
 
@@ -481,7 +505,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         println!("===== 🗂️🗂️🗂️🗂️🗂️ GetRawTransactionEpochList handler() 종료(노드 주소: {:?}) 🗂️🗂️🗂️🗂️🗂️ =====", tx_orderer_address); // test code
 
         Ok(GetRawTransactionEpochListResponse {
-            raw_transaction_list: raw_transaction_epoch_list,
+            // raw_transaction_list: raw_transaction_epoch_list,
+            raw_transaction_meta_list,
         })
     }
 }

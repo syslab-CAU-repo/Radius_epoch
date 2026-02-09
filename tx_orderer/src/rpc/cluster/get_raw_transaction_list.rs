@@ -7,7 +7,7 @@ use std::{
 use radius_sdk::{json_rpc::client::Priority, signature::Address};
 use tokio::{sync::mpsc::UnboundedReceiver, time::Instant};
 
-use super::SyncLeaderTxOrderer;
+use super::{RawTransactionMeta, SyncLeaderTxOrderer};
 use crate::{
     rpc::{
         cluster::{GetOrderCommitmentInfo, GetOrderCommitmentInfoResponse},
@@ -768,6 +768,43 @@ pub fn my_extract_raw_transactions(batch: Batch, epoch: u64, provided_epoch: i64
         .collect()
 }
 
+pub fn my_extract_raw_transactions_with_meta(
+    batch: Batch,
+    epoch: u64,
+    provided_epoch: i64,
+    batch_number: u64,
+    transactions_in_batch: &mut i32,
+) -> Vec<(String, RawTransactionMeta)> {
+    batch
+        .raw_transaction_list
+        .into_iter()
+        .enumerate()
+        .filter_map(|(transaction_order, transaction)| match transaction {
+            RawTransaction::Eth(eth_tx) => match eth_tx.epoch {
+                Some(tx_epoch) => {
+                    if tx_epoch > epoch {
+                        *transactions_in_batch += 1;
+                        None
+                    } else if provided_epoch >= 0 && tx_epoch < provided_epoch as u64 {
+                        None
+                    } else {
+                        Some((
+                            eth_tx.raw_transaction,
+                            RawTransactionMeta {
+                                epoch: Some(tx_epoch),
+                                batch_number: batch_number,
+                                transaction_order: transaction_order as u64,
+                            },
+                        ))
+                    }
+                }
+                None => None,
+            },
+            RawTransaction::EthBundle(_) => None,
+        })
+        .collect()
+}
+
 pub fn get_last_valid_completed_epoch(
     completed_epoch: &BTreeSet<u64>,
     provided_epoch: u64,
@@ -912,6 +949,57 @@ pub fn my_fetch_and_append_transactions(
             RawTransaction::EthBundle(EthRawBundleTransaction(data)) => {
                 // EthBundle은 epoch 필터링 없이 포함
                 raw_transaction_list.push(data);
+            }
+        }
+    }
+    Ok(())
+}
+
+pub fn my_fetch_and_append_transactions_with_meta(
+    rollup_id: &RollupId,
+    batch_number: u64,
+    current_provided_transaction_order: &mut i64,
+    last_valid_transaction_order: i64,
+    raw_transaction_list: &mut Vec<String>,
+    raw_transaction_meta_list: &mut Vec<RawTransactionMeta>,
+    epoch: &u64,
+    provided_epoch: i64,
+) -> Result<(), RpcError> {
+    let start_transaction_order: u64 = (*current_provided_transaction_order + 1) as u64;
+
+    if last_valid_transaction_order < start_transaction_order as i64 {
+        return Ok(());
+    }
+
+    for transaction_order in
+        start_transaction_order..=last_valid_transaction_order.try_into().unwrap()
+    {
+        let (raw_transaction, _) =
+            RawTransactionModel::get(rollup_id, batch_number, transaction_order)?;
+
+        match raw_transaction {
+            RawTransaction::Eth(eth_tx) => match eth_tx.epoch {
+                Some(tx_epoch) => {
+                    if tx_epoch > *epoch {
+                        continue;
+                    } else if provided_epoch >= 0 && tx_epoch < provided_epoch as u64 {
+                        raw_transaction_list.push(eth_tx.raw_transaction);
+                        raw_transaction_meta_list.push(RawTransactionMeta {
+                            epoch: Some(tx_epoch),
+                            batch_number: batch_number,
+                            transaction_order: transaction_order as u64,
+                        });
+                    }
+                }
+                None => {}
+            },
+            RawTransaction::EthBundle(EthRawBundleTransaction(data)) => {
+                raw_transaction_list.push(data);
+                raw_transaction_meta_list.push(RawTransactionMeta {
+                    epoch: None,
+                    batch_number: batch_number,
+                    transaction_order: transaction_order as u64,
+                });
             }
         }
     }
