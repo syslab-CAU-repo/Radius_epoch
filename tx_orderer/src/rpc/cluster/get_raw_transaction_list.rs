@@ -981,14 +981,15 @@ pub fn my_fetch_and_append_transactions_with_meta(
             RawTransaction::Eth(eth_tx) => match eth_tx.epoch {
                 Some(tx_epoch) => {
                     if tx_epoch > *epoch {
-                        continue;
-                    } else if provided_epoch >= 0 && tx_epoch < provided_epoch as u64 {
+                        break;
+                    } else {
                         raw_transaction_list.push(eth_tx.raw_transaction);
                         raw_transaction_meta_list.push(RawTransactionMeta {
                             epoch: Some(tx_epoch),
                             batch_number: batch_number,
                             transaction_order: transaction_order as u64,
                         });
+                        *current_provided_transaction_order += 1; // (02.09 수정사항) my_fetch_and_append_transactions_with_meta에서 current_provided_transaction_order 갱신 로직 추가
                     }
                 }
                 None => {}
