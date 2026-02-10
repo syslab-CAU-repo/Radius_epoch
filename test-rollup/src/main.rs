@@ -3,9 +3,21 @@ use std::time::Duration;
 use reqwest::Client;
 use serde_json::json;
 use tokio::time::sleep;
+use tracing::{error, info};
+
+fn init_logging() {
+    let filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_target(true)
+        .init();
+}
 
 #[tokio::main]
 async fn main() {
+    init_logging();
+
     let client = Client::new();
 
     // let platform_url = "http://14.32.133.68:8545"; // old code
@@ -115,10 +127,10 @@ async fn main() {
                 let next_leader_tx_orderer_index =
                     (current_leader_tx_orderer_index + 1) % tx_orderer_addresses.len();
 
-                println!(
-                    "Current leader tx orderer address: {}\nnext leader tx orderer address: {}",
-                    tx_orderer_addresses[current_leader_tx_orderer_index],
-                    tx_orderer_addresses[next_leader_tx_orderer_index]
+                info!(
+                    current_leader = %tx_orderer_addresses[current_leader_tx_orderer_index],
+                    next_leader = %tx_orderer_addresses[next_leader_tx_orderer_index],
+                    "Current leader tx orderer / next leader tx orderer"
                 );
 
                 /*
@@ -168,10 +180,10 @@ async fn main() {
                     Ok(response) => {
                         let response = response.json::<serde_json::Value>().await.unwrap();
 
-                        println!("Response {:?}\n", response);
+                        info!(?response, "Response");
                         rollup_block_height += 1;
                     }
-                    Err(e) => eprintln!("Request failed: {}", e),
+                    Err(e) => error!(%e, "Request failed"),
                 }
 
                 if block_generation_count
@@ -185,7 +197,7 @@ async fn main() {
                 // sleep(Duration::from_millis(block_generation_interval)).await;
                 sleep(Duration::from_secs(block_generation_interval)).await;
             },
-            Err(e) => println!("Failed to convert hex to u64: {}", e),
+            Err(e) => error!(%e, "Failed to convert hex to u64"),
         }
     }
     return;
