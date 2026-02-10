@@ -68,7 +68,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             .as_nanos();
 
         let mut raw_transaction_epoch_list = Vec::new();
-        let mut raw_transaction_meta_list = Vec::new();
+        let mut raw_transaction_meta_list = Vec::new(); // test code
 
         let rollup_id = self.rollup_id.clone();
 
@@ -83,57 +83,64 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
 
                 return Ok(GetRawTransactionEpochListResponse {
                     // raw_transaction_list: Vec::new(),
-                    raw_transaction_meta_list: Vec::new(),
+                    raw_transaction_meta_list: Vec::new(), // test code
                 });
             }
         };
 
         let rollup = Rollup::get(&rollup_id)?;
 
-        let mut epoch = rollup_metadata.provided_epoch; // 초기화(값은 의미없음)
-
-        // 현재까지 처리된 가장 최신의 epoch를 받아옴(CanProvideEpochInfo에서 받아옴)
-        if let Ok(can_provide_epoch) = CanProvideEpochInfo::get(&rollup_id) {
-            let completed_epoch_list = &can_provide_epoch.completed_epoch;
-            // println!("🔍 completed_epoch_list: {:?}", completed_epoch_list); // test code
-            epoch = match get_last_valid_completed_epoch(completed_epoch_list, epoch) {
-                Ok(last_valid_epoch) => last_valid_epoch,
-                Err(err) => {
-                    tracing::error!("Failed to get epoch - rollup_id: {:?} / error: {:?}", rollup_id, err);
-                    return Ok(GetRawTransactionEpochListResponse {
-                        // raw_transaction_list: Vec::new(),
-                        raw_transaction_meta_list: Vec::new(),
-                    });
+        // 현재까지 완료된(leader node가 end_signal을 받고 CanProvideEpochInfo에 추가한) 가장 최신의 epoch를 받아옴(CanProvideEpochInfo에서 받아옴)
+        let epoch = match CanProvideEpochInfo::get(&rollup_id) {
+            Ok(can_provide_epoch) => {
+                let completed_epoch_list = &can_provide_epoch.completed_epoch;
+                // println!("🔍 completed_epoch_list: {:?}", completed_epoch_list); // test code
+                match get_last_valid_completed_epoch(
+                    completed_epoch_list,
+                    rollup_metadata.provided_epoch,
+                ) {
+                    Ok(last_valid_epoch) => last_valid_epoch,
+                    Err(err) => {
+                        tracing::error!(
+                            "Failed to get epoch - rollup_id: {:?} / error: {:?}",
+                            rollup_id,
+                            err
+                        );
+                        return Ok(GetRawTransactionEpochListResponse {
+                            // raw_transaction_list: Vec::new(),
+                            raw_transaction_meta_list: Vec::new(),
+                        });
+                    }
                 }
-            };
-        } else {
-            tracing::error!("Failed to get can_provide_epoch - rollup_id: {:?}", rollup_id);
-            return Ok(GetRawTransactionEpochListResponse {
-                // raw_transaction_list: Vec::new(),
-                raw_transaction_meta_list: Vec::new(),
-            });
-        }
+            }
+            Err(err) => {
+                tracing::error!(
+                    "Failed to get can_provide_epoch - rollup_id: {:?} / error: {:?}",
+                    rollup_id,
+                    err
+                );
+                return Ok(GetRawTransactionEpochListResponse {
+                    // raw_transaction_list: Vec::new(),
+                    raw_transaction_meta_list: Vec::new(),
+                });
+            }
+        };
+        println!("💡epoch(CanProvideEpochInfo에서 받아온 값): {:?}", epoch); // test code
 
-        // println!("💡epoch(CanProvideEpochInfo에서 받아온 값): {:?}", epoch); // test code
-
-        let provided_epoch = ProvidedEpochInfo::get(&rollup_id)
-            .map(|info| info.provided_epoch)
-            .unwrap_or(-1);
-
-        // println!("last_completed_batch_number: {:?}", rollup_metadata.completed_batch_number); // test code
+        let provided_epoch = rollup_metadata.provided_epoch; // 저번 get 요청에서 처리된 epoch 최댓값(이 epoch 이하는 다시 볼 필요 없음)
+        println!("💡provided_epoch(RollupMetadata에서 받아온 값): {:?}", provided_epoch); // test code
 
         let last_completed_batch_number = rollup_metadata.completed_batch_number; // 저번 get 요청에서 처리된 가장 최신의 batch 번호
-
         let mut current_completed_batch_number = last_completed_batch_number; // rollup_metadata.completed_batch_number 갱신을 위한 mut 변수
         let mut current_provided_batch_number = last_completed_batch_number + 1; // 현재 처리 시작할 batch 번호
 
-        // println!("current_completed_batch_number(Batch 순회 전): {:?}", current_completed_batch_number); // test code
+        println!("current_completed_batch_number(Batch 순회 전): {:?}", current_completed_batch_number); // test code
         // println!("current_provided_batch_number(Batch 순회 전): {:?}", current_provided_batch_number); // test code
         
         let mut iteration_count = 0; // test code
 
         while let Ok(batch) = Batch::get(&rollup_id, current_provided_batch_number as u64) { // current_provided_batch_number is i64, but Batch::get requires u64. This variable is always a non-negative integer so this won't cause an error.
-            println!("= {:?}th interation =", iteration_count); // test code
+            println!("= {:?}th batch interation(Batch 번호: {:?}) =", iteration_count, current_provided_batch_number); // test code
 
             let mut transactions_in_batch = 0;
             let extracted = my_extract_raw_transactions_with_meta(
@@ -158,6 +165,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         }
 
         let mut current_provided_transaction_order = rollup_metadata.provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 지난 요청에서 어디까지 진행됐는지 받아옴
+        println!("💡current_provided_transaction_order(RollupMetadata에서 받아온 값): {:?}", current_provided_transaction_order); // test code
 
         // println!("current_completed_batch_number(Batch 순회 후): {:?}", current_completed_batch_number); // test code
         // println!("current_provided_batch_number(Batch 순회 후): {:?}", current_provided_batch_number); // test code
@@ -172,11 +180,12 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                     can_provide_transaction_orderers,
                     current_provided_transaction_order,
                 );
+                println!("💡valid_end_transaction_order(get_last_valid_transaction_order()에서 받아온 값): {:?}", valid_end_transaction_order); // test code
         
                 my_fetch_and_append_transactions_with_meta(
                     &rollup_id,
                     current_provided_batch_number as u64,
-                    &mut current_provided_transaction_order, 
+                    0,
                     valid_end_transaction_order,
                     &mut raw_transaction_epoch_list,
                     &mut raw_transaction_meta_list,
@@ -211,7 +220,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         mut_rollup_metadata.provided_transaction_order = current_provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 이번 요청에서 어디까지 진행됐는지 저장
 
         mut_rollup_metadata.completed_batch_number = current_completed_batch_number; // new code
-        mut_rollup_metadata.provided_epoch = epoch; // new code
+        mut_rollup_metadata.provided_epoch = epoch as i64; // new code
 
         let leader_tx_orderer_rpc_info = cluster
             .get_tx_orderer_rpc_info(&self.leader_change_message.next_leader_tx_orderer_address)
@@ -511,6 +520,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
     }
 }
 
+// not used
 pub async fn sync_rollup_metadata(
     context: AppState,
     rollup_id: RollupId,
@@ -518,7 +528,7 @@ pub async fn sync_rollup_metadata(
     transaction_order: u64,
     provided_batch_number: u64,
     provided_transaction_order: i64,
-    provided_epoch: u64, 
+    provided_epoch: i64, 
     completed_batch_number: i64, 
 ) -> Result<(), radius_sdk::kvstore::KvStoreError> {
     println!("=== 🔄🔥 sync_rollup_metadata 시작 🔥🔄 ==="); // test code

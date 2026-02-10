@@ -543,7 +543,7 @@ pub async fn sync_leader_tx_orderer(
     transaction_order: u64,
     provided_batch_number: u64,
     provided_transaction_order: i64,
-    provided_epoch: u64, // new code
+    provided_epoch: i64, // new code
     completed_batch_number: i64, // new code
     current_leader_tx_orderer_address: &Address, // new code
     old_epoch: u64, // new code
@@ -807,7 +807,7 @@ pub fn my_extract_raw_transactions_with_meta(
 
 pub fn get_last_valid_completed_epoch(
     completed_epoch: &BTreeSet<u64>,
-    provided_epoch: u64,
+    provided_epoch: i64,
 ) -> Result<u64, Error> {
     // println!("get_last_valid_completed_epoch 시작"); // test code
 
@@ -821,12 +821,12 @@ pub fn get_last_valid_completed_epoch(
         // println!("  {:?}th iteration(epoch: {:?})", iteration_count, epoch); // test code
         // iteration_count += 1; // test code
         
-        if epoch == last_valid_epoch + 1 {
+        if epoch as i64 == last_valid_epoch + 1 {
             // println!("  if epoch == last_valid_epoch + 1"); // test code
             //println!("  last_valid_epoch before: {:?}", last_valid_epoch); // test code
             last_valid_epoch += 1;
             // println!("  last_valid_epoch after: {:?}", last_valid_epoch); // test code
-        } else if epoch > last_valid_epoch {
+        } else if epoch as i64 > last_valid_epoch {
             // println!("  if epoch > last_valid_epoch"); // test code
             break;
         }
@@ -836,7 +836,13 @@ pub fn get_last_valid_completed_epoch(
 
     // println!("get_last_valid_completed_epoch 종료"); // test code
 
-    Ok(last_valid_epoch)
+    if last_valid_epoch < 0 {
+        return Err(Error::GeneralError(
+            "last_valid_completed_epoch is negative; cannot convert to u64".into(),
+        ));
+    }
+
+    Ok(last_valid_epoch as u64)
 }
 // === new code end ===
 
@@ -844,7 +850,7 @@ pub fn get_last_valid_transaction_order(
     can_provide_transaction_orders: &BTreeSet<u64>,
     provided_transaction_order: i64,
 ) -> i64 {
-    // println!("=== get_last_valid_transaction_order 시작 ==="); // test code
+    println!("=== get_last_valid_transaction_order 시작 ==="); // test code
     
     let mut last_valid_transaction_order = provided_transaction_order;
 
@@ -865,10 +871,10 @@ pub fn get_last_valid_transaction_order(
         }
     }
 
-    // println!("last_valid_transaction_order(after iteration): {:?}", last_valid_transaction_order); // test code
+    println!("    last_valid_transaction_order(after iteration): {:?}", last_valid_transaction_order); // test code
     // println!("iteration_count: {:?}", iteration_count); // test code
 
-    // println!("=== get_last_valid_transaction_order 종료 ==="); // test code
+    println!("=== get_last_valid_transaction_order 종료 ==="); // test code
 
     last_valid_transaction_order as i64
 }
@@ -958,14 +964,15 @@ pub fn my_fetch_and_append_transactions(
 pub fn my_fetch_and_append_transactions_with_meta(
     rollup_id: &RollupId,
     batch_number: u64,
-    current_provided_transaction_order: &mut i64,
+    start_transaction_order: u64, // 0으로 받음
     last_valid_transaction_order: i64,
     raw_transaction_list: &mut Vec<String>,
-    raw_transaction_meta_list: &mut Vec<RawTransactionMeta>,
+    raw_transaction_meta_list: &mut Vec<RawTransactionMeta>, // test code
     epoch: &u64,
     provided_epoch: i64,
 ) -> Result<(), RpcError> {
-    let start_transaction_order: u64 = (*current_provided_transaction_order + 1) as u64; // 이전에 반환했던 트랜잭션 숫자 바로 다음 숫자부터 시작함
+    // let start_transaction_order: u64 = (*current_provided_transaction_order + 1) as u64; // 이전에 반환했던 트랜잭션 숫자 바로 다음 숫자부터 시작함
+    // (02.10 수정사항) current_provided_transaction_order 사용 부분 주석 처리 
 
     if last_valid_transaction_order < start_transaction_order as i64 {
         return Ok(());
@@ -981,7 +988,9 @@ pub fn my_fetch_and_append_transactions_with_meta(
             RawTransaction::Eth(eth_tx) => match eth_tx.epoch {
                 Some(tx_epoch) => {
                     if tx_epoch > *epoch {
-                        break;
+                        continue;
+                    } else if provided_epoch >= 0 && tx_epoch <= provided_epoch as u64 {
+                        continue;
                     } else {
                         raw_transaction_list.push(eth_tx.raw_transaction);
                         raw_transaction_meta_list.push(RawTransactionMeta {
@@ -989,7 +998,8 @@ pub fn my_fetch_and_append_transactions_with_meta(
                             batch_number: batch_number,
                             transaction_order: transaction_order as u64,
                         });
-                        *current_provided_transaction_order += 1; // (02.09 수정사항) my_fetch_and_append_transactions_with_meta에서 current_provided_transaction_order 갱신 로직 추가
+                        // *current_provided_transaction_order += 1; // (02.09 수정사항) my_fetch_and_append_transactions_with_meta에서 current_provided_transaction_order 갱신 로직 추가
+                        // (02.10 수정사항) current_provided_transaction_order 갱신 로직 주석 처리 
                     }
                 }
                 None => {}

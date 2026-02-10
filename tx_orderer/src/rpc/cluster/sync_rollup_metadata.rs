@@ -18,7 +18,7 @@ pub struct SyncRollupMetadata {
     pub provided_batch_number: u64,
     pub provided_transaction_order: i64,
 
-    pub provided_epoch: u64,
+    pub provided_epoch: i64,
     pub completed_batch_number: i64,
 }
 

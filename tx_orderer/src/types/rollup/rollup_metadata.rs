@@ -12,6 +12,7 @@ use super::RollupId;
 #[kvstore(key(rollup_id: &RollupId))]
 pub struct CanProvideEpochInfo {
     pub completed_epoch: BTreeSet<u64>,
+    
 }
 
 impl Default for CanProvideEpochInfo {
@@ -110,7 +111,7 @@ pub struct RollupMetadata {
     pub provided_transaction_order: i64,
 
     pub completed_batch_number: i64, // new code
-    pub provided_epoch: u64, // new code, (02.07 수정사항) 이 변수의 의미: 저번 실행까지 rollup에 전달된 epoch 최댓값
+    pub provided_epoch: i64, // new code, (02.07 수정사항) 이 변수의 의미: 저번 실행까지 rollup에 전달된 epoch 최댓값
 }
 
 impl Default for RollupMetadata {
@@ -126,7 +127,7 @@ impl Default for RollupMetadata {
             provided_transaction_order: -1,
 
             completed_batch_number: -1, // new code
-            provided_epoch: 0, // new code
+            provided_epoch: -1, // new code
         }
     }
 }

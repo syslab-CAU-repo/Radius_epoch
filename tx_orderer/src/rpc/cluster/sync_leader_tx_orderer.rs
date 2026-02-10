@@ -18,7 +18,7 @@ pub struct SyncLeaderTxOrderer {
     pub provided_batch_number: u64,
     pub provided_transaction_order: i64,
 
-    pub provided_epoch: u64, // new code
+    pub provided_epoch: i64, // new code
     pub completed_batch_number: i64, // new code
 
     pub old_epoch: Option<u64>, // new code
