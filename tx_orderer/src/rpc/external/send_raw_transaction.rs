@@ -24,7 +24,7 @@ impl RpcParameter<AppState> for SendRawTransaction {
     // async fn handler(self, context: AppState) -> Result<Self::Response, RpcError> { // old code
 
         // === test code begin ===
-        println!("=== SendRawTransaction 시작 ===");
+        // println!("=== SendRawTransaction 시작 ===");
         tracing::info!("=== SendRawTransaction 시작 ===");
         // println!("Rollup ID: {}", self.rollup_id);
         // println!("Transaction Type: {:?}", self.raw_transaction);
@@ -34,7 +34,7 @@ impl RpcParameter<AppState> for SendRawTransaction {
 
         let mut mut_rollup_metadata = RollupMetadata::get_mut(&self.rollup_id)?;
 
-        println!("Rollup Max Transaction Count Per Batch: {}", mut_rollup_metadata.max_transaction_count_per_batch); // test code
+        // println!("Rollup Max Transaction Count Per Batch: {}", mut_rollup_metadata.max_transaction_count_per_batch); // test code
 
         let cluster_metadata = ClusterMetadata::get(
             rollup.platform,
@@ -56,23 +56,23 @@ impl RpcParameter<AppState> for SendRawTransaction {
                     // set the current leader tx orderer address in the raw transaction
                     eth_tx.current_leader_tx_orderer_address = Some(cluster_metadata.leader_tx_orderer_rpc_info.clone().unwrap().tx_orderer_address.as_hex_string());
                     
-                    println!("Enhanced transaction - Epoch: {:?}, Leader: {:?}", eth_tx.epoch, eth_tx.current_leader_tx_orderer_address); // test code
+                    // println!("Enhanced transaction - Epoch: {:?}, Leader: {:?}", eth_tx.epoch, eth_tx.current_leader_tx_orderer_address); // test code
                 }
                 else {
-                    println!("(Transaction is not from the client) Enhanced transaction - Epoch: {:?}, Leader: {:?}", eth_tx.epoch, eth_tx.current_leader_tx_orderer_address); // test code
+                    // println!("(Transaction is not from the client) Enhanced transaction - Epoch: {:?}, Leader: {:?}", eth_tx.epoch, eth_tx.current_leader_tx_orderer_address); // test code
                 }
             }
             RawTransaction::EthBundle(_) => {}
         }
 
-        println!("cluster_metadata.epoch: {:?}", cluster_metadata.epoch); // test code
+        // println!("cluster_metadata.epoch: {:?}", cluster_metadata.epoch); // test code
 
         let signer = context.get_signer(rollup.platform).await.map_err(|_| {
             tracing::error!("Signer not found for platform {:?}", rollup.platform);
             Error::SignerNotFound
         })?;
 
-        println!("signer.address(): {:?}", signer.address()); // test code
+        // println!("signer.address(): {:?}", signer.address()); // test code
 
         let tx_orderer_address = signer.address().clone().as_hex_string(); // address of the current tx orderer
         
@@ -114,11 +114,11 @@ impl RpcParameter<AppState> for SendRawTransaction {
         // if cluster_metadata.is_leader { // old code
         if is_current_leader { // new code
             // === test code begin ===
-            println!("=== Leader Node ===");
-            println!("Cluster ID: {}", rollup.cluster_id);
-            println!("Platform: {:?}", rollup.platform);
-            println!("Liveness Service Provider: {:?}", rollup.liveness_service_provider);
-            println!("Platform Block Height: {}", cluster_metadata.platform_block_height);
+            // println!("=== Leader Node ===");
+            // println!("Cluster ID: {}", rollup.cluster_id);
+            // println!("Platform: {:?}", rollup.platform);
+            // println!("Liveness Service Provider: {:?}", rollup.liveness_service_provider);
+            // println!("Platform Block Height: {}", cluster_metadata.platform_block_height);
             // === test code end ===
 
             /* // old code
@@ -236,7 +236,7 @@ impl RpcParameter<AppState> for SendRawTransaction {
                 }
             }
 
-            println!("=== SendRawTransaction 종료(leader node) ===");
+            // println!("=== SendRawTransaction 종료(leader node) ===");
 
             match rollup.order_commitment_type {
                 OrderCommitmentType::TransactionHash => Ok(OrderCommitment::Single(
@@ -247,7 +247,7 @@ impl RpcParameter<AppState> for SendRawTransaction {
                 OrderCommitmentType::Sign => Ok(order_commitment),
             }
         } else {
-            println!("=== SendRawTransaction 리더 아님 ===");
+            // println!("=== SendRawTransaction 리더 아님 ===");
 
             drop(mut_rollup_metadata);
 
@@ -298,7 +298,7 @@ pub fn sync_raw_transaction(
     order_commitment: OrderCommitment,
     is_direct_sent: bool,
 ) {
-    println!("=== Sync Raw Transaction 시작 ===");
+    // println!("=== Sync Raw Transaction 시작 ===");
 
     tokio::spawn(async move {
         let other_cluster_rpc_url_list = cluster.get_other_cluster_rpc_url_list();
@@ -315,9 +315,9 @@ pub fn sync_raw_transaction(
             is_direct_sent,
         };
 
-        println!("=== Sync Raw Transaction Info ===");
-        println!("Batch Number: {}", sync_raw_transaction.batch_number);
-        println!("Transaction Order: {}", sync_raw_transaction.transaction_order);
+        // println!("=== Sync Raw Transaction Info ===");
+        // println!("Batch Number: {}", sync_raw_transaction.batch_number);
+        // println!("Transaction Order: {}", sync_raw_transaction.transaction_order);
 
         context
             .rpc_client()
@@ -329,7 +329,7 @@ pub fn sync_raw_transaction(
             )
             .await;
 
-        println!("=== Sync Raw Transaction 종료 ===");
+        // println!("=== Sync Raw Transaction 종료 ===");
     });
 }
 
