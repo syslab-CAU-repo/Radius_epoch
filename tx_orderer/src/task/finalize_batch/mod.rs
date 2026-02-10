@@ -236,6 +236,7 @@ pub async fn create_batch_task(
 
                 Batch::put(&batch, rollup_id, batch_number)?;
             } else {
+                /*
                 tracing::error!(
                     "Failed to verify leader tx orderer signature - rollup_id: {:?}, batch_number: {:?} / tx_orderer_address_list: {:?} / signer_address: {:?} / batch_commitment: {:?} / raw_transaction_list_count: {:?}",
                     rollup_id,
@@ -245,6 +246,8 @@ pub async fn create_batch_task(
                     BatchCommitment::from(batch_commitment),
                     raw_transactions.len()
                 );
+                // (2.10 수정사항) 테스트 시 로그 과다 출력 방지를 위해 임시로 주석 처리함
+                */
 
                 tokio::time::sleep(Duration::from_secs(1)).await;
                 continue;

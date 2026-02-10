@@ -91,13 +91,13 @@ impl RpcParameter<AppState> for SendRawTransaction {
             }
         }
         else {
-            println!("⚠️raw_transaction_current_leader_tx_orderer_address is None"); // test code
+            // println!("⚠️raw_transaction_current_leader_tx_orderer_address is None"); // test code
             is_current_leader = cluster_metadata.is_leader;
         }
 
-        println!("raw_transaction_current_leader_tx_orderer_address: {:?}", raw_transaction_current_leader_tx_orderer_address.clone().unwrap()); // test code
-        println!("tx_orderer_address: {:?}", tx_orderer_address); // test code
-        println!("is_current_leader: {:?}", is_current_leader); // test code
+        // println!("raw_transaction_current_leader_tx_orderer_address: {:?}", raw_transaction_current_leader_tx_orderer_address.clone().unwrap()); // test code
+        // println!("tx_orderer_address: {:?}", tx_orderer_address); // test code
+        // println!("is_current_leader: {:?}", is_current_leader); // test code
 
         let cluster = Cluster::get(
                 rollup.platform,

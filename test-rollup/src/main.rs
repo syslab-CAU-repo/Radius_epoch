@@ -128,9 +128,9 @@ async fn main() {
                     (current_leader_tx_orderer_index + 1) % tx_orderer_addresses.len();
 
                 info!(
-                    current_leader = %tx_orderer_addresses[current_leader_tx_orderer_index],
-                    next_leader = %tx_orderer_addresses[next_leader_tx_orderer_index],
-                    "Current leader tx orderer / next leader tx orderer"
+                    "Current leader tx orderer / next leader tx orderer\ncurrent_leader={}\nnext_leader={}",
+                    tx_orderer_addresses[current_leader_tx_orderer_index],
+                    tx_orderer_addresses[next_leader_tx_orderer_index],
                 );
 
                 /*
@@ -180,7 +180,11 @@ async fn main() {
                     Ok(response) => {
                         let response = response.json::<serde_json::Value>().await.unwrap();
 
-                        info!(?response, "Response");
+                        if let Ok(pretty) = serde_json::to_string_pretty(&response) {
+                            info!("Response\n{}", pretty);
+                        } else {
+                            info!(?response, "Response");
+                        }
                         rollup_block_height += 1;
                     }
                     Err(e) => error!(%e, "Request failed"),
