@@ -19,16 +19,16 @@ pub struct ClusterMetadata {
     pub is_leader: bool,
     pub leader_tx_orderer_rpc_info: Option<TxOrdererRpcInfo>,
 
-    pub epoch: Option<u64>, // new code
+    pub epoch: Option<i64>, // new code
 
     // epoch별 노드 end_signal 비트맵
     // HashMap<epoch, bitmap> 형태
     // bitmap의 각 비트는 해당 인덱스의 노드가 end_signal을 보냈는지를 나타냄
-    pub epoch_node_bitmap: HashMap<u64, u64>, // new code
+    pub epoch_node_bitmap: HashMap<i64, u64>, // new code
 
     // epoch별 리더 주소
     // HashMap<epoch, leader_address> 형태
-    pub epoch_leader_map: HashMap<u64, String>,  // new code
+    pub epoch_leader_map: HashMap<i64, String>,  // new code
 }
 
 impl ClusterMetadata {
@@ -46,13 +46,13 @@ impl ClusterMetadata {
 
     // === new code start ===
     // 특정 epoch의 특정 노드 인덱스에 비트 설정
-    pub fn set_node_bit(&mut self, epoch: u64, node_index: usize) {
+    pub fn set_node_bit(&mut self, epoch: i64, node_index: usize) {
         let bitmap = self.epoch_node_bitmap.entry(epoch).or_insert(0);
         *bitmap |= 1 << node_index;
     }
 
     // 특정 epoch의 특정 노드 인덱스 비트 확인
-    pub fn get_node_bit(&self, epoch: u64, node_index: usize) -> bool {
+    pub fn get_node_bit(&self, epoch: i64, node_index: usize) -> bool {
         self.epoch_node_bitmap
             .get(&epoch)
             .map(|bitmap| (*bitmap >> node_index) & 1 == 1)
@@ -60,7 +60,7 @@ impl ClusterMetadata {
     }
 
     // 특정 epoch의 모든 노드가 end_signal을 보냈는지 확인
-    pub fn all_nodes_sent_signal(&self, epoch: u64, total_nodes: usize) -> bool {
+    pub fn all_nodes_sent_signal(&self, epoch: i64, total_nodes: usize) -> bool {
         if total_nodes == 0 {
             return false;
         }
@@ -80,7 +80,7 @@ impl ClusterMetadata {
     }
 
     // 특정 epoch의 비트맵 가져오기
-    pub fn get_epoch_bitmap(&self, epoch: u64) -> u64 {
+    pub fn get_epoch_bitmap(&self, epoch: i64) -> u64 {
         self.epoch_node_bitmap.get(&epoch).copied().unwrap_or(0)
     }
     // === new code end ===

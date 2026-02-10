@@ -7,7 +7,7 @@ use crate::rpc::prelude::*;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SyncEpoch {
     pub rollup_id: RollupId,
-    pub epoch: u64,
+    pub epoch: i64,
 }
 
 impl RpcParameter<AppState> for SyncEpoch {

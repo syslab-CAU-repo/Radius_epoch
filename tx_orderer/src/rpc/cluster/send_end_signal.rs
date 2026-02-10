@@ -7,7 +7,7 @@ use super::SyncCanProvideEpochInfo;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SendEndSignal {
     pub rollup_id: RollupId,
-    pub epoch: u64,
+    pub epoch: i64,
     pub sender_address: Address,
 }
 
@@ -181,7 +181,7 @@ pub fn sync_can_provide_epoch_info(
     context: AppState,
     cluster: Cluster,
     rollup_id: RollupId,
-    epoch: u64,
+    epoch: i64,
     current_node_cluster_rpc_url: String,
 ) {
     println!("=== 🔄🕐 sync_can_provide_epoch_info 시작(epoch: {:?}) 🕐🔄 ===", epoch); // test code

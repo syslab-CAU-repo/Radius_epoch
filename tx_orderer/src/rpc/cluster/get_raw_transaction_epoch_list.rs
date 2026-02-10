@@ -40,7 +40,7 @@ pub struct GetRawTransactionEpochList {
 // === test code start ===
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct RawTransactionMeta {
-    pub epoch: Option<u64>,
+    pub epoch: Option<i64>,
     pub batch_number: u64,
     pub transaction_order: u64,
 }

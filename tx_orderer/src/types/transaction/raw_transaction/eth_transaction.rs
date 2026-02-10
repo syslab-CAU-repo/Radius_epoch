@@ -7,7 +7,7 @@ use crate::{error::Error, types::prelude::*};
 pub struct EthRawTransaction {
     pub raw_transaction: String,
     #[serde(default)]
-    pub epoch: Option<u64>, // None is required by the clients
+    pub epoch: Option<i64>, // None is required by the clients
     #[serde(default)]
     pub current_leader_tx_orderer_address: Option<String>, // None is required by the clients
 }
@@ -73,7 +73,7 @@ impl EthRawTransaction {
     }
 
     // === new code start ===
-    pub fn set_epoch(&mut self, epoch: u64) {
+    pub fn set_epoch(&mut self, epoch: i64) {
         self.epoch = Some(epoch);
     }
     // === new code end ===

@@ -4,7 +4,7 @@ use radius_sdk::signature::Address;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SyncCanProvideEpochInfo {
-    pub epoch: u64,
+    pub epoch: i64,
     pub rollup_id: RollupId,
 }
 

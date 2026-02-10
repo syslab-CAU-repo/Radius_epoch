@@ -21,8 +21,8 @@ pub struct SyncLeaderTxOrderer {
     pub provided_epoch: i64, // new code
     pub completed_batch_number: i64, // new code
 
-    pub old_epoch: Option<u64>, // new code
-    pub new_epoch: Option<u64>, // new code
+    pub old_epoch: Option<i64>, // new code
+    pub new_epoch: Option<i64>, // new code
 }
 
 impl RpcParameter<AppState> for SyncLeaderTxOrderer {
@@ -313,7 +313,7 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
 pub fn send_end_signal_to_epoch_leader(
     context: AppState,
     rollup_id: RollupId,
-    epoch: u64,
+    epoch: i64,
     epoch_leader_rpc_url: String,
 ) {
     println!("=== 📤⚙️ send_end_signal_to_epoch_leader 시작(epoch: {:?}) ⚙️📤 ===", epoch); // test code

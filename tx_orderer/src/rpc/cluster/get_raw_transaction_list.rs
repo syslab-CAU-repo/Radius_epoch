@@ -546,8 +546,8 @@ pub async fn sync_leader_tx_orderer(
     provided_epoch: i64, // new code
     completed_batch_number: i64, // new code
     current_leader_tx_orderer_address: &Address, // new code
-    old_epoch: u64, // new code
-    new_epoch: u64, // new code
+    old_epoch: i64, // new code
+    new_epoch: i64, // new code
     epoch_leader_rpc_url: String, // new code
 ) {
     println!("=== 🔄⚙️ sync_leader_tx_orderer 시작 ⚙️🔄 ==="); // test code
@@ -737,7 +737,7 @@ fn extract_raw_transactions(batch: Batch, start_transaction_order: u64) -> Vec<S
 }
 
 // === new code start ===
-pub fn my_extract_raw_transactions(batch: Batch, epoch: u64, provided_epoch: i64, transactions_in_batch: &mut i32) -> Vec<String> {
+pub fn my_extract_raw_transactions(batch: Batch, epoch: i64, provided_epoch: i64, transactions_in_batch: &mut i32) -> Vec<String> {
     batch
         .raw_transaction_list
         .into_iter()
@@ -752,7 +752,7 @@ pub fn my_extract_raw_transactions(batch: Batch, epoch: u64, provided_epoch: i64
                             }
                             else {
                                 // provided_epoch: -1 = 아직 보낸 epoch 없음, 0+ = 직전에 보낸 epoch 최댓값. -1일 땐 이 조건으로 걸러내지 않음
-                                if provided_epoch >= 0 && tx_epoch < provided_epoch as u64 {
+                                if provided_epoch >= 0 && tx_epoch < provided_epoch {
                                     None // tx_epoch가 provided_epoch보다 작으면 (지난 트랜잭션) 반환하지 않음
                                 } else {
                                     Some(eth_tx.raw_transaction) // tx_epoch가 epoch 이하이고 provided_epoch 미만이 아니면 반환
@@ -770,7 +770,7 @@ pub fn my_extract_raw_transactions(batch: Batch, epoch: u64, provided_epoch: i64
 
 pub fn my_extract_raw_transactions_with_meta(
     batch: Batch,
-    epoch: u64,
+    epoch: i64,
     provided_epoch: i64,
     batch_number: u64,
     transactions_in_batch: &mut i32,
@@ -785,7 +785,7 @@ pub fn my_extract_raw_transactions_with_meta(
                     if tx_epoch > epoch {
                         *transactions_in_batch += 1;
                         None
-                    } else if provided_epoch >= 0 && tx_epoch <= provided_epoch as u64 { // (02.10 수정사항) tx_epoch < provided_epoch 대신 tx_epoch <= provided_epoch 사용
+                    } else if provided_epoch >= 0 && tx_epoch <= provided_epoch { // (02.10 수정사항) tx_epoch < provided_epoch 대신 tx_epoch <= provided_epoch 사용
                         None
                     } else {
                         Some((
@@ -806,9 +806,9 @@ pub fn my_extract_raw_transactions_with_meta(
 }
 
 pub fn get_last_valid_completed_epoch(
-    completed_epoch: &BTreeSet<u64>,
+    completed_epoch: &BTreeSet<i64>,
     provided_epoch: i64,
-) -> Result<u64, Error> {
+) -> Result<i64, Error> {
     // println!("get_last_valid_completed_epoch 시작"); // test code
 
     let mut last_valid_epoch = provided_epoch;
@@ -821,12 +821,12 @@ pub fn get_last_valid_completed_epoch(
         // println!("  {:?}th iteration(epoch: {:?})", iteration_count, epoch); // test code
         // iteration_count += 1; // test code
         
-        if epoch as i64 == last_valid_epoch + 1 {
+        if epoch == last_valid_epoch + 1 {
             // println!("  if epoch == last_valid_epoch + 1"); // test code
             //println!("  last_valid_epoch before: {:?}", last_valid_epoch); // test code
             last_valid_epoch += 1;
             // println!("  last_valid_epoch after: {:?}", last_valid_epoch); // test code
-        } else if epoch as i64 > last_valid_epoch {
+        } else if epoch > last_valid_epoch {
             // println!("  if epoch > last_valid_epoch"); // test code
             break;
         }
@@ -836,13 +836,7 @@ pub fn get_last_valid_completed_epoch(
 
     // println!("get_last_valid_completed_epoch 종료"); // test code
 
-    if last_valid_epoch < 0 {
-        return Err(Error::GeneralError(
-            "last_valid_completed_epoch is negative; cannot convert to u64".into(),
-        ));
-    }
-
-    Ok(last_valid_epoch as u64)
+    Ok(last_valid_epoch)
 }
 // === new code end ===
 
@@ -912,7 +906,7 @@ pub fn my_fetch_and_append_transactions(
     current_provided_transaction_order: &mut i64,
     last_valid_transaction_order: i64,
     raw_transaction_list: &mut Vec<String>,
-    epoch: &u64,
+    epoch: &i64,
     provided_epoch: i64,
 ) -> Result<(), RpcError> {
     let start_transaction_order: u64 = (*current_provided_transaction_order + 1) as u64; // (02.05 수정사항) my_fetch_and_append_transactions에서 current_provided_transaction_order 갱신 로직 추가
@@ -938,7 +932,7 @@ pub fn my_fetch_and_append_transactions(
                             // (02.07 수정사항) 다시 continue 사용
                         }
                         else {
-                            if provided_epoch >= 0 && tx_epoch < provided_epoch as u64 {
+                            if provided_epoch >= 0 && tx_epoch < provided_epoch {
                                 // tx_epoch가 주어진 epoch보다 작거나 같으면 포함
                                 raw_transaction_list.push(eth_tx.raw_transaction);
                                 // *current_provided_transaction_order += 1; // (02.05 수정사항) my_fetch_and_append_transactions에서 current_provided_transaction_order 갱신 로직 추가
@@ -968,7 +962,7 @@ pub fn my_fetch_and_append_transactions_with_meta(
     last_valid_transaction_order: i64,
     raw_transaction_list: &mut Vec<String>,
     raw_transaction_meta_list: &mut Vec<RawTransactionMeta>, // test code
-    epoch: &u64,
+    epoch: &i64,
     provided_epoch: i64,
 ) -> Result<(), RpcError> {
     // let start_transaction_order: u64 = (*current_provided_transaction_order + 1) as u64; // 이전에 반환했던 트랜잭션 숫자 바로 다음 숫자부터 시작함
@@ -989,7 +983,7 @@ pub fn my_fetch_and_append_transactions_with_meta(
                 Some(tx_epoch) => {
                     if tx_epoch > *epoch {
                         continue;
-                    } else if provided_epoch >= 0 && tx_epoch <= provided_epoch as u64 {
+                    } else if provided_epoch >= 0 && tx_epoch <= provided_epoch {
                         continue;
                     } else {
                         raw_transaction_list.push(eth_tx.raw_transaction);
