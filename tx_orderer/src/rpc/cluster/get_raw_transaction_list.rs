@@ -785,7 +785,7 @@ pub fn my_extract_raw_transactions_with_meta(
                     if tx_epoch > epoch {
                         *transactions_in_batch += 1;
                         None
-                    } else if provided_epoch >= 0 && tx_epoch < provided_epoch as u64 {
+                    } else if provided_epoch >= 0 && tx_epoch <= provided_epoch as u64 { // (02.10 수정사항) tx_epoch < provided_epoch 대신 tx_epoch <= provided_epoch 사용
                         None
                     } else {
                         Some((
@@ -965,7 +965,7 @@ pub fn my_fetch_and_append_transactions_with_meta(
     epoch: &u64,
     provided_epoch: i64,
 ) -> Result<(), RpcError> {
-    let start_transaction_order: u64 = (*current_provided_transaction_order + 1) as u64;
+    let start_transaction_order: u64 = (*current_provided_transaction_order + 1) as u64; // 이전에 반환했던 트랜잭션 숫자 바로 다음 숫자부터 시작함
 
     if last_valid_transaction_order < start_transaction_order as i64 {
         return Ok(());
