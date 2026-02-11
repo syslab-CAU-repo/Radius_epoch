@@ -180,6 +180,12 @@ async fn main() {
                     Ok(response) => {
                         let response = response.json::<serde_json::Value>().await.unwrap();
 
+                        let tx_list_len = response["result"]["raw_transaction_meta_list"]
+                            .as_array()
+                            .map(|arr| arr.len())
+                            .unwrap_or(0);
+                        info!("raw_transaction_meta_list 길이: {}", tx_list_len);
+
                         if let Ok(pretty) = serde_json::to_string_pretty(&response) {
                             info!("Response\n{}", pretty);
                         } else {
