@@ -196,7 +196,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 if current_provided_transaction_order
                     == rollup.max_transaction_count_per_batch as i64 - 1
                 {
-                    current_provided_batch_number += 1;
+                    // current_provided_batch_number += 1; // (02.17 수정사항) current_provided_batch_number 갱신 로직 주석 처리 
                     current_provided_transaction_order = -1;
                 }
             }

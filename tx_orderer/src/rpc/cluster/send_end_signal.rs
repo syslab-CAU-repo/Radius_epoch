@@ -19,10 +19,10 @@ impl RpcParameter<AppState> for SendEndSignal {
     }
 
     async fn handler(self, context: AppState) -> Result<Self::Response, RpcError> {
-        println!("===== 📤📤📤📤📤 SendEndSignal handler() 시작(epoch: {:?}) 📤📤📤📤📤 =====", self.epoch); // test code
+        // println!("===== 📤📤📤📤📤 SendEndSignal handler() 시작(epoch: {:?}) 📤📤📤📤📤 =====", self.epoch); // test code
 
-        println!("📤📤 epoch: {:?}", self.epoch); // test code
-        println!("📤📤 sender_address: {:?}", self.sender_address); // test code
+        // println!("📤📤 epoch: {:?}", self.epoch); // test code
+        // println!("📤📤 sender_address: {:?}", self.sender_address); // test code
 
         let rollup = Rollup::get(&self.rollup_id).map_err(|e| {
             tracing::error!("Failed to retrieve rollup: {:?}", e);
@@ -150,7 +150,7 @@ impl RpcParameter<AppState> for SendEndSignal {
             })?;
         }
 
-        println!("📤📤 epoch completed: (epoch: {:?}, completed: {:?})", self.epoch, mut_cluster_metadata.all_nodes_sent_signal(self.epoch, total_nodes)); // test code
+        // println!("📤📤 epoch completed: (epoch: {:?}, completed: {:?})", self.epoch, mut_cluster_metadata.all_nodes_sent_signal(self.epoch, total_nodes)); // test code
 
         mut_cluster_metadata.update().map_err(|e| {
             tracing::error!(
@@ -171,7 +171,7 @@ impl RpcParameter<AppState> for SendEndSignal {
             current_node_cluster_rpc_url,
         );
 
-        println!("===== 📤📤📤📤📤 SendEndSignal handler() 종료(epoch: {:?}) 📤📤📤📤📤 =====", self.epoch); // test code
+        //println!("===== 📤📤📤📤📤 SendEndSignal handler() 종료(epoch: {:?}) 📤📤📤📤📤 =====", self.epoch); // test code
 
         Ok(())
     }
@@ -184,7 +184,7 @@ pub fn sync_can_provide_epoch_info(
     epoch: i64,
     current_node_cluster_rpc_url: String,
 ) {
-    println!("=== 🔄🕐 sync_can_provide_epoch_info 시작(epoch: {:?}) 🕐🔄 ===", epoch); // test code
+    // println!("=== 🔄🕐 sync_can_provide_epoch_info 시작(epoch: {:?}) 🕐🔄 ===", epoch); // test code
 
     let mut other_cluster_rpc_url_list = cluster.get_other_cluster_rpc_url_list();
     if other_cluster_rpc_url_list.is_empty() {
@@ -214,7 +214,7 @@ pub fn sync_can_provide_epoch_info(
             .await;
     });
 
-    println!("=== 🔄🕐 sync_can_provide_epoch_info 종료(epoch: {:?}) 🕐🔄 ===", epoch); // test codes
+    // println!("=== 🔄🕐 sync_can_provide_epoch_info 종료(epoch: {:?}) 🕐🔄 ===", epoch); // test codes
 }
 
 
