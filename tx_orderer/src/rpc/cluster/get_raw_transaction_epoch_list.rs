@@ -164,7 +164,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             iteration_count += 1; // test code
         }
 
-        let mut current_provided_transaction_order = rollup_metadata.provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 지난 요청에서 어디까지 진행됐는지 받아옴
+        let current_provided_transaction_order = rollup_metadata.provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 지난 요청에서 어디까지 진행됐는지 받아옴
         println!("💡current_provided_transaction_order(RollupMetadata에서 받아온 값): {:?}", current_provided_transaction_order); // test code
 
         println!("current_completed_batch_number(Batch 순회 후): {:?}", current_completed_batch_number); // test code
@@ -193,12 +193,14 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                     provided_epoch,
                 )?;
 
+                /*
                 if current_provided_transaction_order
                     == rollup.max_transaction_count_per_batch as i64 - 1
                 {
                     // current_provided_batch_number += 1; // (02.17 수정사항) current_provided_batch_number 갱신 로직 주석 처리 
                     current_provided_transaction_order = -1;
                 }
+                */
             }
         }
 
