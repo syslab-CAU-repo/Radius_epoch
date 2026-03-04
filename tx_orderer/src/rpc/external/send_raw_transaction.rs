@@ -343,12 +343,16 @@ pub fn sync_batch_creation(
     batch_commitment: [u8; 32],
     batch_creator_signature: Signature,
 ) {
+    println!("sync_batch_creation() 시작"); // test code
+
     tokio::spawn(async move {
         tracing::info!(
             "Sync batch creation - rollup_id: {:?} / batch_number: {:?}",
             rollup_id,
             batch_number
         );
+
+        println!("sync_batch_creation() - 1"); // test code
 
         let other_cluster_rpc_url_list = cluster.get_other_cluster_rpc_url_list();
         if other_cluster_rpc_url_list.is_empty() {
@@ -373,6 +377,8 @@ pub fn sync_batch_creation(
             Ok(signature) => signature,
             Err(_) => return,
         };
+
+        println!("sync_batch_creation() - 2"); // test code
 
         let sync_batch_creation = SyncBatchCreation {
             batch_creation_massage,
