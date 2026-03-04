@@ -57,7 +57,7 @@ impl RpcParameter<AppState> for GetRawTransactionList {
     }
 
     async fn handler(self, context: AppState) -> Result<Self::Response, RpcError> {
-        println!("=== GetRawTransactionList handler() 시작 ==="); // test code
+        tracing::info!("=== GetRawTransactionList handler() 시작 ==="); // test code
 
         let start_get_raw_transaction_list_time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -217,7 +217,7 @@ impl RpcParameter<AppState> for GetRawTransactionList {
         }
         */
 
-        println!("current_provided_batch_number: {:?}", current_provided_batch_number); // test code
+        tracing::info!("current_provided_batch_number: {:?}", current_provided_batch_number); // test code
 
         // === new code start ===
         if let Ok(can_provide_transaction_info) = CanProvideTransactionInfo::get(&rollup_id) {
@@ -253,7 +253,7 @@ impl RpcParameter<AppState> for GetRawTransactionList {
         }
         // === new code end ===
 
-        println!("can_provide_transaction_info done"); // test code
+        tracing::info!("can_provide_transaction_info done"); // test code
 
         let cluster = Cluster::get(
             rollup.platform,
@@ -262,7 +262,7 @@ impl RpcParameter<AppState> for GetRawTransactionList {
             self.leader_change_message.platform_block_height,
         )?;
 
-        println!("self.leader_change_message.platform_block_height: {:?}", self.leader_change_message.platform_block_height); // test code
+        tracing::info!("self.leader_change_message.platform_block_height: {:?}", self.leader_change_message.platform_block_height); // test code
 
         let mut mut_rollup_metadata = RollupMetadata::get_mut(&rollup_id)?;
 
@@ -287,13 +287,13 @@ impl RpcParameter<AppState> for GetRawTransactionList {
                 Error::TxOrdererInfoNotFound
             })?;
 
-        println!("leader_tx_orderer_rpc_info: {:?}", leader_tx_orderer_rpc_info); // test code
-        println!("leader_tx_orderer_rpc_info.cluster_rpc_url: {:?}", leader_tx_orderer_rpc_info.cluster_rpc_url); // test code
-        println!("leader_tx_orderer_rpc_info.external_rpc_url: {:?}", leader_tx_orderer_rpc_info.external_rpc_url); // test code
-        println!("leader_tx_orderer_rpc_info.tx_orderer_address: {:?}", leader_tx_orderer_rpc_info.tx_orderer_address); // test code
+        tracing::info!("leader_tx_orderer_rpc_info: {:?}", leader_tx_orderer_rpc_info); // test code
+        tracing::info!("leader_tx_orderer_rpc_info.cluster_rpc_url: {:?}", leader_tx_orderer_rpc_info.cluster_rpc_url); // test code
+        tracing::info!("leader_tx_orderer_rpc_info.external_rpc_url: {:?}", leader_tx_orderer_rpc_info.external_rpc_url); // test code
+        tracing::info!("leader_tx_orderer_rpc_info.tx_orderer_address: {:?}", leader_tx_orderer_rpc_info.tx_orderer_address); // test code
 
-        println!("=== rollup.platform value: {:?} ===", rollup.platform); // test code. This shows Ethereum/Holesky/Local
-        println!("rollup.platform value: {:?}", rollup.platform); // test code. This shows Ethereum/Holesky/Local
+        tracing::info!("=== rollup.platform value: {:?} ===", rollup.platform); // test code. This shows Ethereum/Holesky/Local
+        tracing::info!("rollup.platform value: {:?}", rollup.platform); // test code. This shows Ethereum/Holesky/Local
         
         let signer = context.get_signer(rollup.platform).await.map_err(|_| {
             tracing::error!("Signer not found for platform {:?}", rollup.platform);
@@ -302,13 +302,13 @@ impl RpcParameter<AppState> for GetRawTransactionList {
 
         let tx_orderer_address = signer.address().clone();
 
-        println!("signer.address() value: {:?}", signer.address()); // test code
-        println!("self.leader_change_message.next_leader_tx_orderer_address: {:?}", self.leader_change_message.next_leader_tx_orderer_address); // test code
+        tracing::info!("signer.address() value: {:?}", signer.address()); // test code
+        tracing::info!("self.leader_change_message.next_leader_tx_orderer_address: {:?}", self.leader_change_message.next_leader_tx_orderer_address); // test code
 
         let is_next_leader =
             tx_orderer_address == self.leader_change_message.next_leader_tx_orderer_address;
 
-        println!("is_next_leader: {:?}", is_next_leader); // test code
+        tracing::info!("is_next_leader: {:?}", is_next_leader); // test code
         
         let mut mut_cluster_metadata = ClusterMetadata::get_mut(
             rollup.platform,
@@ -316,14 +316,14 @@ impl RpcParameter<AppState> for GetRawTransactionList {
             &rollup.cluster_id,
         )?;
 
-        println!("= mut_cluster_metadata initialization ="); // test code
-        println!("mut_cluster_metadata.cluster_id: {:?}", mut_cluster_metadata.cluster_id); // test code
-        println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
-        println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
-        println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code        
+        tracing::info!("= mut_cluster_metadata initialization ="); // test code
+        tracing::info!("mut_cluster_metadata.cluster_id: {:?}", mut_cluster_metadata.cluster_id); // test code
+        tracing::info!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
+        tracing::info!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
+        tracing::info!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code        
 
         if mut_cluster_metadata.is_leader == false {
-            println!("*** if mut_cluster_metadata.is_leader == false ***"); // test code
+            tracing::info!("*** if mut_cluster_metadata.is_leader == false ***"); // test code
 
             if let Some(current_leader_tx_orderer_rpc_info) =
                 mut_cluster_metadata.leader_tx_orderer_rpc_info.clone()
@@ -333,8 +333,8 @@ impl RpcParameter<AppState> for GetRawTransactionList {
                     .clone()
                     .unwrap();
 
-                println!("current_leader_tx_orderer_cluster_rpc_url: {:?}", current_leader_tx_orderer_cluster_rpc_url); // test code
-                println!("current_leader_tx_orderer_rpc_info: {:?}", current_leader_tx_orderer_rpc_info); // test code
+                tracing::info!("current_leader_tx_orderer_cluster_rpc_url: {:?}", current_leader_tx_orderer_cluster_rpc_url); // test code
+                tracing::info!("current_leader_tx_orderer_rpc_info: {:?}", current_leader_tx_orderer_rpc_info); // test code
 
                 let parameter = GetOrderCommitmentInfo {
                     rollup_id: self.leader_change_message.rollup_id.clone(),
@@ -383,16 +383,16 @@ impl RpcParameter<AppState> for GetRawTransactionList {
         mut_cluster_metadata.is_leader = is_next_leader;
         mut_cluster_metadata.leader_tx_orderer_rpc_info = Some(leader_tx_orderer_rpc_info.clone());
 
-        println!("= mut_cluster_metadata update ="); // test code
-        println!("mut_cluster_metadata.cluster_id: {:?}", mut_cluster_metadata.cluster_id); // test code
-        println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
-        println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
-        println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
+        tracing::info!("= mut_cluster_metadata update ="); // test code
+        tracing::info!("mut_cluster_metadata.cluster_id: {:?}", mut_cluster_metadata.cluster_id); // test code
+        tracing::info!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
+        tracing::info!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
+        tracing::info!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
 
         // === new code start ===
         let old_epoch = mut_cluster_metadata.epoch.unwrap_or(0);
 
-        println!("old_epoch: {:?}", old_epoch); // test code
+        tracing::info!("old_epoch: {:?}", old_epoch); // test code
 
         // old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (update 전에 저장해야 함)
         if let Some(current_leader_rpc_info) = cluster.get_tx_orderer_rpc_info(&self.leader_change_message.current_leader_tx_orderer_address) {
@@ -421,7 +421,7 @@ impl RpcParameter<AppState> for GetRawTransactionList {
             .unwrap_or_default();
         // === new code end ===
 
-        println!("new_epoch: {:?}", new_epoch); // test code
+        tracing::info!("new_epoch: {:?}", new_epoch); // test code
 
         let signer = context.get_signer(rollup.platform).await?;
         let current_tx_orderer_address = signer.address();
@@ -523,7 +523,7 @@ impl RpcParameter<AppState> for GetRawTransactionList {
             }
         }
 
-        println!("=== GetRawTransactionList handler() 종료(노드 주소: {:?}) ===", current_tx_orderer_address); // test code
+        tracing::info!("=== GetRawTransactionList handler() 종료(노드 주소: {:?}) ===", current_tx_orderer_address); // test code
 
         */ // old code comment out
 
@@ -550,7 +550,7 @@ pub async fn sync_leader_tx_orderer(
     new_epoch: i64, // new code
     epoch_leader_rpc_url: String, // new code
 ) {
-    println!("=== 🔄⚙️ sync_leader_tx_orderer 시작 ⚙️🔄 ==="); // test code
+    tracing::info!("=== 🔄⚙️ sync_leader_tx_orderer 시작 ⚙️🔄 ==="); // test code
     // println!("next_leader_tx_orderer_rpc_info.tx_orderer_address: {}", &leader_change_message.next_leader_tx_orderer_address); // test code
     // println!("current_leader_tx_orderer_address: {}", current_leader_tx_orderer_address); // test code
 
@@ -700,10 +700,10 @@ pub async fn sync_leader_tx_orderer(
             */
             // === new code end ===
 
-            println!("=== 🔄⚙️ sync_leader_tx_orderer 종료(리더가 바뀔 때) ⚙️🔄 ==="); // test code
+            tracing::info!("=== 🔄⚙️ sync_leader_tx_orderer 종료(리더가 바뀔 때) ⚙️🔄 ==="); // test code
         }
         else {
-            println!("=== 🔄⚙️ sync_leader_tx_orderer 종료(리더가 바뀌지 않을 때) ⚙️🔄 ==="); // test code
+            tracing::info!("=== 🔄⚙️ sync_leader_tx_orderer 종료(리더가 바뀌지 않을 때) ⚙️🔄 ==="); // test code
         }
     } else {
         // println!("else"); // test code
@@ -713,7 +713,7 @@ pub async fn sync_leader_tx_orderer(
             leader_change_message.next_leader_tx_orderer_address
         );
 
-        println!("=== 🔄⚙️ sync_leader_tx_orderer 종료(next_leader_tx_orderer_rpc_info not found) ⚙️🔄 ==="); // test code
+        tracing::info!("=== 🔄⚙️ sync_leader_tx_orderer 종료(next_leader_tx_orderer_rpc_info not found) ⚙️🔄 ==="); // test code
     }
 }
 
@@ -844,7 +844,7 @@ pub fn get_last_valid_transaction_order(
     can_provide_transaction_orders: &BTreeSet<u64>,
     provided_transaction_order: i64,
 ) -> i64 {
-    println!("=== get_last_valid_transaction_order 시작 ==="); // test code
+    tracing::info!("=== get_last_valid_transaction_order 시작 ==="); // test code
     
     let mut last_valid_transaction_order = provided_transaction_order;
 
@@ -865,10 +865,10 @@ pub fn get_last_valid_transaction_order(
         }
     }
 
-    println!("    last_valid_transaction_order(after iteration): {:?}", last_valid_transaction_order); // test code
+    tracing::info!("    last_valid_transaction_order(after iteration): {:?}", last_valid_transaction_order); // test code
     // println!("iteration_count: {:?}", iteration_count); // test code
 
-    println!("=== get_last_valid_transaction_order 종료 ==="); // test code
+    tracing::info!("=== get_last_valid_transaction_order 종료 ==="); // test code
 
     last_valid_transaction_order as i64
 }

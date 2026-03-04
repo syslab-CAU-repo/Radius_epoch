@@ -38,7 +38,7 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
 
     async fn handler(self, context: AppState) -> Result<Self::Response, RpcError> {
         
-        println!("===== 🔄🔄🔄🔄🔄 SyncLeaderTxOrderer handler() 시작 🔄🔄🔄🔄🔄 ====="); // test code
+        tracing::info!("===== 🔄🔄🔄🔄🔄 SyncLeaderTxOrderer handler() 시작 🔄🔄🔄🔄🔄 ====="); // test code
 
         /*
         println!("self.rollup_signature: {:?}", self.rollup_signature); // test code
@@ -148,14 +148,14 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
         // 📌 epoch_leader_map ✅
         // 📌 epoch_node_bitmap -> no need to synchronize
 
-        println!("🔄🔄 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
+        tracing::info!("🔄🔄 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
         // println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
         // println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
         // println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
-        println!("🔄🔄 💡mut_cluster_metadata.epoch(업데이트 전): {:?}", mut_cluster_metadata.epoch); // test code
+        tracing::info!("🔄🔄 💡mut_cluster_metadata.epoch(업데이트 전): {:?}", mut_cluster_metadata.epoch); // test code
         // println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
         // println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
-        println!("🔄🔄 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
+        tracing::info!("🔄🔄 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
 
         mut_cluster_metadata.platform_block_height =
             self.leader_change_message.platform_block_height; // 🚩 platform_block_height 
@@ -174,7 +174,7 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
 
         // old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (이미 존재하지 않을 때만)
         if !mut_cluster_metadata.epoch_leader_map.contains_key(&old_epoch) {
-            println!("old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (이미 존재하지 않을 때만)"); // test code
+            tracing::info!("old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (이미 존재하지 않을 때만)"); // test code
             if let Some(current_leader_rpc_info) = cluster.get_tx_orderer_rpc_info(&self.leader_change_message.current_leader_tx_orderer_address) {
                 if let Some(cluster_rpc_url) = &current_leader_rpc_info.cluster_rpc_url {
                     mut_cluster_metadata.epoch_leader_map.insert(old_epoch, cluster_rpc_url.clone());
@@ -201,14 +201,14 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
         // === new code end ===
         // 💫💫💫💫💫 mut_cluster_metadata synchronization end(SyncLeaderTxOrderer) 💫💫💫💫💫
 
-        println!("🔄🔄 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
+        tracing::info!("🔄🔄 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
         // println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
         // println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
         // println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
-        println!("🔄🔄 💡mut_cluster_metadata.epoch(업데이트 후): {:?}", mut_cluster_metadata.epoch); // test code
+        tracing::info!("🔄🔄 💡mut_cluster_metadata.epoch(업데이트 후): {:?}", mut_cluster_metadata.epoch); // test code
         // println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
         // println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
-        println!("🔄🔄 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
+        tracing::info!("🔄🔄 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
 
         mut_cluster_metadata.update()?;
 
@@ -303,7 +303,7 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
             self
         );
 
-        println!("=== 🔄🔄🔄🔄🔄 SyncLeaderTxOrderer handler() 종료(노드 주소: {:?}) 🔄🔄🔄🔄🔄 ===", tx_orderer_address); // test code
+        tracing::info!("=== 🔄🔄🔄🔄🔄 SyncLeaderTxOrderer handler() 종료(노드 주소: {:?}) 🔄🔄🔄🔄🔄 ===", tx_orderer_address); // test code
 
         Ok(())
     }
@@ -316,7 +316,7 @@ pub fn send_end_signal_to_epoch_leader(
     epoch: i64,
     epoch_leader_rpc_url: String,
 ) {
-    println!("=== 📤⚙️ send_end_signal_to_epoch_leader 시작(epoch: {:?}) ⚙️📤 ===", epoch); // test code
+    tracing::info!("=== 📤⚙️ send_end_signal_to_epoch_leader 시작(epoch: {:?}) ⚙️📤 ===", epoch); // test code
 
     tokio::spawn(async move {
         let rollup = match Rollup::get(&rollup_id) {
@@ -338,9 +338,9 @@ pub fn send_end_signal_to_epoch_leader(
         let sender_address = signer.address().clone();
         let sender_address_clone = sender_address.clone();
 
-        println!("📤⚙️ send_end_signal 요청 보내는 노드: {:?}", sender_address_clone); // test code
-        println!("📤⚙️ epoch: {:?}", epoch); // test code
-        println!("📤⚙️ epoch {:?}의 리더 노드 url: {:?}", epoch, epoch_leader_rpc_url); // test code
+        tracing::info!("📤⚙️ send_end_signal 요청 보내는 노드: {:?}", sender_address_clone); // test code
+        tracing::info!("📤⚙️ epoch: {:?}", epoch); // test code
+        tracing::info!("📤⚙️ epoch {:?}의 리더 노드 url: {:?}", epoch, epoch_leader_rpc_url); // test code
 
         let parameter = SendEndSignal {
             rollup_id,
@@ -357,8 +357,8 @@ pub fn send_end_signal_to_epoch_leader(
                 Id::Null,
             )
             .await;
-
-        println!("=== 📤⚙️ send_end_signal_to_epoch_leader 종료(epoch: {:?}) ⚙️📤 ===", epoch); // test code
+        
+        tracing::info!("=== 📤⚙️ send_end_signal_to_epoch_leader 종료(epoch: {:?}) ⚙️📤 ===", epoch); // test code
     });
 
     

@@ -19,7 +19,7 @@ impl RpcParameter<AppState> for SendEndSignal {
     }
 
     async fn handler(self, context: AppState) -> Result<Self::Response, RpcError> {
-        // println!("===== 📤📤📤📤📤 SendEndSignal handler() 시작(epoch: {:?}) 📤📤📤📤📤 =====", self.epoch); // test code
+        // tracing::info!("===== 📤📤📤📤📤 SendEndSignal handler() 시작(epoch: {:?}) 📤📤📤📤📤 =====", self.epoch); // test code
 
         // println!("📤📤 epoch: {:?}", self.epoch); // test code
         // println!("📤📤 sender_address: {:?}", self.sender_address); // test code
@@ -84,9 +84,9 @@ impl RpcParameter<AppState> for SendEndSignal {
                 Error::GeneralError("Cluster RPC URL not found".into())
             })?;
 
-        // println!("current_node_cluster_rpc_url: {:?}", current_node_cluster_rpc_url); // test code
-        // println!("tx_orderer_address: {:?}", tx_orderer_address); // test code
-        // println!("epoch's leader: {:?}", cluster_metadata.epoch_leader_map.get(&self.epoch).unwrap_or(&"".to_string())); // test code
+        // tracing::info!("current_node_cluster_rpc_url: {:?}", current_node_cluster_rpc_url); // test code
+        // tracing::info!("tx_orderer_address: {:?}", tx_orderer_address); // test code
+        // tracing::info!("epoch's leader: {:?}", cluster_metadata.epoch_leader_map.get(&self.epoch).unwrap_or(&"".to_string())); // test code
 
         // 현재 노드가 epoch의 leader인지 확인(❗URL❗로 비교)
         if cluster_metadata.epoch_leader_map.get(&self.epoch).unwrap_or(&"".to_string()) != &current_node_cluster_rpc_url {
@@ -150,7 +150,7 @@ impl RpcParameter<AppState> for SendEndSignal {
             })?;
         }
 
-        println!("📤📤 epoch completed: (epoch: {:?}, completed: {:?})", self.epoch, mut_cluster_metadata.all_nodes_sent_signal(self.epoch, total_nodes)); // test code
+        tracing::info!("📤📤 epoch completed: (epoch: {:?}, completed: {:?})", self.epoch, mut_cluster_metadata.all_nodes_sent_signal(self.epoch, total_nodes)); // test code
 
         mut_cluster_metadata.update().map_err(|e| {
             tracing::error!(
@@ -171,7 +171,7 @@ impl RpcParameter<AppState> for SendEndSignal {
             current_node_cluster_rpc_url,
         );
 
-        //println!("===== 📤📤📤📤📤 SendEndSignal handler() 종료(epoch: {:?}) 📤📤📤📤📤 =====", self.epoch); // test code
+        //tracing::info!("===== 📤📤📤📤📤 SendEndSignal handler() 종료(epoch: {:?}) 📤📤📤📤📤 =====", self.epoch); // test code
 
         Ok(())
     }
@@ -184,7 +184,7 @@ pub fn sync_can_provide_epoch_info(
     epoch: i64,
     current_node_cluster_rpc_url: String,
 ) {
-    // println!("=== 🔄🕐 sync_can_provide_epoch_info 시작(epoch: {:?}) 🕐🔄 ===", epoch); // test code
+    // tracing::info!("=== 🔄🕐 sync_can_provide_epoch_info 시작(epoch: {:?}) 🕐🔄 ===", epoch); // test code
 
     let mut other_cluster_rpc_url_list = cluster.get_other_cluster_rpc_url_list();
     if other_cluster_rpc_url_list.is_empty() {
@@ -214,7 +214,7 @@ pub fn sync_can_provide_epoch_info(
             .await;
     });
 
-    // println!("=== 🔄🕐 sync_can_provide_epoch_info 종료(epoch: {:?}) 🕐🔄 ===", epoch); // test codes
+    // tracing::info!("=== 🔄🕐 sync_can_provide_epoch_info 종료(epoch: {:?}) 🕐🔄 ===", epoch); // test codes
 }
 
 
