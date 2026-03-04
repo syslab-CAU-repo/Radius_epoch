@@ -11,7 +11,8 @@ pub async fn submit_batch_commitment(
     batch_number: u64,
     batch_commitment: &[u8; 32],
 ) {
-    return ; 
+    // return ; // 혹시 몰라서 주석 처리해봄(원래는 한대표님이 이 함수 필요없다고 호출되는 지점에서 주석처리 및 이 함수 조기 return 시켜도 된다고 하심) 
+
     // let validation_platform = context
     //     .get_validation_platform(rollup.cluster_id, rollup.rollup_id)
     //     .await

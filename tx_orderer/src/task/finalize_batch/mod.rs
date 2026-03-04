@@ -14,6 +14,8 @@ use crate::{
 };
 
 pub fn finalize_batch(context: AppState, rollup_id: &RollupId, batch_number: u64) {
+    println!("finalize_batch() 시작");
+
     if Batch::get(rollup_id, batch_number).is_ok() {
         tracing::info!(
             "Finalize batch - rollup id: {:?}, batch number: {:?} already exists",
@@ -41,6 +43,8 @@ async fn finalize_batch_task(
     rollup_id: &RollupId,
     batch_number: u64,
 ) -> Result<(), Error> {
+    println!("finalize_batch_task() 시작");
+
     let rollup = Rollup::get(rollup_id)?;
     let max_transaction_count_per_batch = rollup.max_transaction_count_per_batch;
     let cluster_meta = ClusterMetadata::get(
@@ -107,7 +111,7 @@ async fn finalize_batch_task(
         Batch::put(&batch, rollup_id, batch_number)?;
         tracing::info!("Finalize batch DONE - {}, {}", rollup_id, batch_number);
 
-        // submit_batch_commitment(context, &rollup, batch_number, &batch_commitment).await;
+        submit_batch_commitment(context, &rollup, batch_number, &batch_commitment).await;
 
         break;
     }
