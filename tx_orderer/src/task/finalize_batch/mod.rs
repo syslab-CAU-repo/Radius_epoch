@@ -14,7 +14,7 @@ use crate::{
 };
 
 pub fn finalize_batch(context: AppState, rollup_id: &RollupId, batch_number: u64) {
-    println!("finalize_batch() 시작");
+    tracing::info!("finalize_batch() 시작");
 
     if Batch::get(rollup_id, batch_number).is_ok() {
         tracing::info!(
@@ -43,7 +43,7 @@ async fn finalize_batch_task(
     rollup_id: &RollupId,
     batch_number: u64,
 ) -> Result<(), Error> {
-    println!("finalize_batch_task() 시작");
+    tracing::info!("finalize_batch_task() 시작");
 
     let rollup = Rollup::get(rollup_id)?;
     let max_transaction_count_per_batch = rollup.max_transaction_count_per_batch;
@@ -62,7 +62,7 @@ async fn finalize_batch_task(
     loop {
         tracing::info!("Finalizing batch - {}, {}", rollup_id, batch_number);
 
-        println!("finalize_batch_task() - 1"); // test code
+        tracing::info!("finalize_batch_task() - 1"); // test code
 
         let result = build_batch_data(
             &context,
@@ -73,7 +73,7 @@ async fn finalize_batch_task(
         )
         .await;
 
-        println!("finalize_batch_task() - 2"); // test code
+        tracing::info!("finalize_batch_task() - 2"); // test code
 
         let BatchBuildResult {
             encrypted_transaction_list: encrypted_transactions,
@@ -87,7 +87,7 @@ async fn finalize_batch_task(
             }
         };
 
-        println!("finalize_batch_task() - 3"); // test code
+        tracing::info!("finalize_batch_task() - 3"); // test code
 
         let signer = context.get_signer(rollup.platform).await?;
         let batch_creator_signature = signer.sign_message(&batch_commitment)?;
@@ -101,7 +101,7 @@ async fn finalize_batch_task(
             batch_creator_signature.clone(),
         );
 
-        println!("finalize_batch_task() - 4"); // test code
+        tracing::info!("finalize_batch_task() - 4"); // test code
 
         sync_batch_creation(
             context.clone(),
@@ -113,21 +113,21 @@ async fn finalize_batch_task(
             batch_creator_signature,
         );
 
-        println!("finalize_batch_task() - 5"); // test code
+        tracing::info!("finalize_batch_task() - 5"); // test code
 
         CanProvideTransactionInfo::remove_can_provide_transaction_orders(&rollup_id, batch_number)
             .expect("Failed to delete CanProvideTransactionInfo");
 
-        println!("finalize_batch_task() - 6"); // test code
+        tracing::info!("finalize_batch_task() - 6"); // test code
 
         Batch::put(&batch, rollup_id, batch_number)?;
         tracing::info!("Finalize batch DONE - {}, {}", rollup_id, batch_number);
 
-        println!("finalize_batch_task() - 7"); // test code
+        tracing::info!("finalize_batch_task() - 7"); // test code
 
         submit_batch_commitment(context, &rollup, batch_number, &batch_commitment).await;
 
-        println!("finalize_batch_task() - 8"); // test code
+        tracing::info!("finalize_batch_task() - 8"); // test code
 
         break;
     }
@@ -142,7 +142,7 @@ pub fn create_batch(
     batch_creator_signature: Signature,
     leader_tx_orderer_signature: Signature,
 ) {
-    println!("create_batch() 시작"); // test code
+    tracing::info!("create_batch() 시작"); // test code
 
     if Batch::get(rollup_id, batch_number).is_ok() {
         tracing::info!(
@@ -153,7 +153,7 @@ pub fn create_batch(
         return;
     }
 
-    println!("create_batch() - 1"); // test code
+    tracing::info!("create_batch() - 1"); // test code
 
     let rollup_id = rollup_id.to_string();
     tokio::spawn(async move {
@@ -175,7 +175,7 @@ pub fn create_batch(
         }
     });
 
-    println!("create_batch() - 2"); // test code
+    tracing::info!("create_batch() - 2"); // test code
 }
 
 pub async fn create_batch_task(
@@ -185,7 +185,7 @@ pub async fn create_batch_task(
     batch_creator_signature: Signature,
     leader_tx_orderer_signature: Signature,
 ) -> Result<(), Error> {
-    println!("create_batch_task() 시작"); // test code
+    tracing::info!("create_batch_task() 시작"); // test code
 
     let rollup = Rollup::get(rollup_id)?;
     let max_transaction_count_per_batch = rollup.max_transaction_count_per_batch;
@@ -201,12 +201,12 @@ pub async fn create_batch_task(
         cluster_meta.platform_block_height,
     )?;
 
-    println!("create_batch_task() - 1"); // test code
+    tracing::info!("create_batch_task() - 1"); // test code
 
     loop {
         tracing::info!("Creating batch - {}, {}", rollup_id, batch_number);
 
-        println!("create_batch_task() - 2"); // test code
+        tracing::info!("create_batch_task() - 2"); // test code
 
         let result = build_batch_data(
             &context,
@@ -217,7 +217,7 @@ pub async fn create_batch_task(
         )
         .await;
 
-        println!("create_batch_task() - 3"); // test code
+        tracing::info!("create_batch_task() - 3"); // test code
 
         let BatchBuildResult {
             encrypted_transaction_list: encrypted_transactions,
@@ -237,7 +237,7 @@ pub async fn create_batch_task(
             }
         };
 
-        println!("create_batch_task() - 4"); // test code
+        tracing::info!("create_batch_task() - 4"); // test code
 
         let batch_creation_massage = BatchCreationMessage {
             rollup_id: rollup_id.to_string(),
@@ -251,13 +251,13 @@ pub async fn create_batch_task(
         {
             let tx_orderer_address_list = cluster.get_tx_orderer_address_list();
 
-            println!("create_batch_task() - 5"); // test code
+            tracing::info!("create_batch_task() - 5"); // test code
 
             if let Some(leader_tx_orderer_address) = tx_orderer_address_list
                 .iter()
                 .find(|&tx_orderer_address| signer_address == *tx_orderer_address)
             {
-                println!("create_batch_task() - 6"); // test code
+                tracing::info!("create_batch_task() - 6"); // test code
 
                 let batch = Batch::new(
                     batch_number,
@@ -268,7 +268,7 @@ pub async fn create_batch_task(
                     batch_creator_signature,
                 );
 
-                println!("create_batch_task() - 7"); // test code
+                tracing::info!("create_batch_task() - 7"); // test code
 
                 CanProvideTransactionInfo::remove_can_provide_transaction_orders(
                     &rollup_id,
@@ -276,11 +276,11 @@ pub async fn create_batch_task(
                 )
                 .expect("Failed to delete CanProvideTransactionInfo");
 
-                println!("create_batch_task() - 8"); // test code
+                tracing::info!("create_batch_task() - 8"); // test code
 
                 Batch::put(&batch, rollup_id, batch_number)?;
             } else {
-                println!("create_batch_task() - 9"); // test code
+                tracing::info!("create_batch_task() - 9"); // test code
 
                 /*
                 tracing::error!(
@@ -327,7 +327,7 @@ async fn build_batch_data(
     batch_number: u64,
     max_transaction_count_per_batch: u64,
 ) -> Result<BatchBuildResult, Error> {
-    println!("build_batch_data() 시작"); // test code
+    tracing::info!("build_batch_data() 시작"); // test code
 
     let rpc_client = context.rpc_client();
 
