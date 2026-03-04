@@ -91,7 +91,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         let rollup = Rollup::get(&rollup_id)?;
 
         // 현재까지 완료된(leader node가 end_signal을 받고 CanProvideEpochInfo에 추가한) 가장 최신의 epoch를 받아옴(CanProvideEpochInfo에서 받아옴)
-        let epoch = match CanProvideEpochInfo::get(&rollup_id) {
+        let latest_completed_epoch = match CanProvideEpochInfo::get(&rollup_id) {
             Ok(can_provide_epoch) => {
                 let completed_epoch_list = &can_provide_epoch.completed_epoch;
                 // println!("🔍 completed_epoch_list: {:?}", completed_epoch_list); // test code
@@ -125,7 +125,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 });
             }
         };
-        println!("💡epoch(CanProvideEpochInfo에서 받아온 값): {:?}", epoch); // test code
+        println!("💡epoch(CanProvideEpochInfo에서 받아온 값): {:?}", latest_completed_epoch); // test code
 
         let provided_epoch = rollup_metadata.provided_epoch; // 저번 get 요청에서 처리된 epoch 최댓값(이 epoch 이하는 다시 볼 필요 없음)
         println!("💡provided_epoch(RollupMetadata에서 받아온 값): {:?}", provided_epoch); // test code
@@ -145,7 +145,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             let mut transactions_in_batch = 0;
             let extracted = my_extract_raw_transactions_with_meta(
                 batch,
-                epoch,
+                latest_completed_epoch,
                 provided_epoch,
                 current_provided_batch_number as u64,
                 &mut transactions_in_batch,
@@ -189,7 +189,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                     valid_end_transaction_order,
                     &mut raw_transaction_epoch_list,
                     &mut raw_transaction_meta_list,
-                    &epoch,
+                    &latest_completed_epoch,
                     provided_epoch,
                 )?;
 
@@ -222,7 +222,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         mut_rollup_metadata.provided_transaction_order = current_provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 이번 요청에서 어디까지 진행됐는지 저장
 
         mut_rollup_metadata.completed_batch_number = current_completed_batch_number; // new code
-        mut_rollup_metadata.provided_epoch = epoch as i64; // new code
+        mut_rollup_metadata.provided_epoch = latest_completed_epoch as i64; // new code
 
         let leader_tx_orderer_rpc_info = cluster
             .get_tx_orderer_rpc_info(&self.leader_change_message.next_leader_tx_orderer_address)
