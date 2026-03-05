@@ -110,8 +110,11 @@ pub struct RollupMetadata {
     pub provided_batch_number: u64,
     pub provided_transaction_order: i64,
 
-    pub completed_batch_number: i64, // new code
+    pub max_contiguous: i64, // new code
     pub provided_epoch: i64, // new code, (02.07 수정사항) 이 변수의 의미: 저번 실행까지 rollup에 전달된 epoch 최댓값
+
+    #[serde(default)]
+    pub out_of_order_completed_batches: BTreeSet<u64>, // 연속 완료 구간 뒤에 있는 완료 배치 번호들
 }
 
 impl Default for RollupMetadata {
@@ -126,8 +129,9 @@ impl Default for RollupMetadata {
             provided_batch_number: 0,
             provided_transaction_order: -1,
 
-            completed_batch_number: -1, // new code
+            max_contiguous: -1, // new code
             provided_epoch: -1, // new code
+            out_of_order_completed_batches: BTreeSet::new(),
         }
     }
 }

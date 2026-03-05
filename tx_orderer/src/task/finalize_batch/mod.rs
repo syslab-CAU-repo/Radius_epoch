@@ -62,7 +62,7 @@ async fn finalize_batch_task(
     loop {
         tracing::info!("Finalizing batch - {}, {}", rollup_id, batch_number);
 
-        tracing::info!("finalize_batch_task() - 1"); // test code
+        tracing::info!("finalize_batch_task() - 1, batch_number: {:?}", batch_number); // test code
 
         let result = build_batch_data(
             &context,
@@ -73,7 +73,7 @@ async fn finalize_batch_task(
         )
         .await;
 
-        tracing::info!("finalize_batch_task() - 2"); // test code
+        tracing::info!("finalize_batch_task() - 2, batch_number: {:?}", batch_number); // test code
 
         let BatchBuildResult {
             encrypted_transaction_list: encrypted_transactions,
@@ -87,7 +87,7 @@ async fn finalize_batch_task(
             }
         };
 
-        tracing::info!("finalize_batch_task() - 3"); // test code
+        tracing::info!("finalize_batch_task() - 3, batch_number: {:?}", batch_number); // test code
 
         let signer = context.get_signer(rollup.platform).await?;
         let batch_creator_signature = signer.sign_message(&batch_commitment)?;
@@ -101,7 +101,7 @@ async fn finalize_batch_task(
             batch_creator_signature.clone(),
         );
 
-        tracing::info!("finalize_batch_task() - 4"); // test code
+        tracing::info!("finalize_batch_task() - 4, batch_number: {:?}", batch_number); // test code
 
         sync_batch_creation(
             context.clone(),
@@ -113,21 +113,21 @@ async fn finalize_batch_task(
             batch_creator_signature,
         );
 
-        tracing::info!("finalize_batch_task() - 5"); // test code
+        tracing::info!("finalize_batch_task() - 5, batch_number: {:?}", batch_number); // test code
 
         CanProvideTransactionInfo::remove_can_provide_transaction_orders(&rollup_id, batch_number)
             .expect("Failed to delete CanProvideTransactionInfo");
 
-        tracing::info!("finalize_batch_task() - 6"); // test code
+        tracing::info!("finalize_batch_task() - 6, batch_number: {:?}", batch_number); // test code
 
         Batch::put(&batch, rollup_id, batch_number)?;
         tracing::info!("Finalize batch DONE - {}, {}", rollup_id, batch_number);
 
-        tracing::info!("finalize_batch_task() - 7"); // test code
+        tracing::info!("finalize_batch_task() - 7, batch_number: {:?}", batch_number); // test code
 
         submit_batch_commitment(context, &rollup, batch_number, &batch_commitment).await;
 
-        tracing::info!("finalize_batch_task() - 8"); // test code
+        tracing::info!("finalize_batch_task() - 8, batch_number: {:?}", batch_number); // test code
 
         break;
     }

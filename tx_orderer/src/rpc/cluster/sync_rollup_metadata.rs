@@ -1,3 +1,7 @@
+/*
+03.05 수정사항: completed_batch_number 대신 max_contiguous 사용함
+sync_rollup_metadata 요청은 더이상 쓰이지 않으므로 고치지 않고 전체 주석 처리
+
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use radius_sdk::json_rpc::server::ProcessPriority;
@@ -77,4 +81,4 @@ impl RpcParameter<AppState> for SyncRollupMetadata {
         Ok(())
     }
 }
-
+*/

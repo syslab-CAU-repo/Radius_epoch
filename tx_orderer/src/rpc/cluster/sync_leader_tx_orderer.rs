@@ -19,7 +19,7 @@ pub struct SyncLeaderTxOrderer {
     pub provided_transaction_order: i64,
 
     pub provided_epoch: i64, // new code
-    pub completed_batch_number: i64, // new code
+    pub max_contiguous: i64, // new code
 
     pub old_epoch: Option<i64>, // new code
     pub new_epoch: Option<i64>, // new code
@@ -239,7 +239,7 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
         mut_rollup_metadata.provided_transaction_order = self.provided_transaction_order; // 🚩 provided_transaction_order 
 
         mut_rollup_metadata.provided_epoch = self.provided_epoch; // new code -> 🚩 provided_epoch 
-        mut_rollup_metadata.completed_batch_number = self.completed_batch_number; // new code -> 🚩 completed_batch_number 
+        mut_rollup_metadata.max_contiguous = self.max_contiguous; // new code -> 🚩 max_contiguous 
 
         // === test code start ===
         // println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization before update 🔥🔥🔥🔥🔥"); // test code

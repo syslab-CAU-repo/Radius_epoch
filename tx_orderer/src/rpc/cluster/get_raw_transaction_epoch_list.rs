@@ -1,10 +1,10 @@
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeSet, HashSet},
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use super::{SyncRollupMetadata}; // new code
+// use super::{SyncRollupMetadata}; // new code // 03.05 수정사항: sync_rollup_metadata 요청은 더이상 쓰이지 않으므로 주석 처리함
 use crate::rpc::prelude::*;
 
 use super::LeaderChangeMessage; // new code
@@ -51,6 +51,62 @@ pub struct GetRawTransactionEpochListResponse {
     pub raw_transaction_meta_list: Vec<RawTransactionMeta>, // test code
 }
 // === test code end ===
+
+fn mark_batch_completed(
+    batch_number: u64,
+    max_contiguous: &mut i64,
+    out_of_order_set: &mut BTreeSet<u64>,
+) {
+    // 아직 어떤 배치도 완료되지 않은 상태(max_contiguous < 0)인 경우를 먼저 처리
+    if *max_contiguous < 0 {
+        if batch_number == 0 {
+            // 첫 번째로 0번 배치가 완료된 경우, 0부터 시작해서 연속 구간을 계산
+            let mut new_mc: u64 = 0;
+            loop {
+                let next = new_mc + 1;
+                if out_of_order_set.remove(&next) {
+                    new_mc = next;
+                } else {
+                    break;
+                }
+            }
+            *max_contiguous = new_mc as i64;
+        } else {
+            // 아직 0번이 끝나지 않았는데 더 큰 번호가 먼저 끝난 경우 → 보류
+            out_of_order_set.insert(batch_number);
+        }
+        return;
+    }
+
+    // max_contiguous >= 0 인 일반 케이스
+    let mc_u64 = *max_contiguous as u64;
+
+    if batch_number <= mc_u64 {
+        // 이미 연속 완료 구간 안이므로 할 일 없음
+        return;
+    }
+
+    if batch_number == mc_u64 + 1 {
+        // 바로 다음 배치가 완료된 경우: 연속 구간을 앞으로 밀어올릴 수 있음
+        let mut new_mc = batch_number;
+
+        // out_of_order_set에 “그 다음 번호들”이 들어 있다면
+        // 연속으로 이어지는 동안 계속 올려준다.
+        loop {
+            let next = new_mc + 1;
+            if out_of_order_set.remove(&next) {
+                new_mc = next;
+            } else {
+                break;
+            }
+        }
+
+        *max_contiguous = new_mc as i64;
+    } else {
+        // 그 외: 앞에 구멍이 있으므로 일단 보류
+        out_of_order_set.insert(batch_number);
+    }
+}
 
 impl RpcParameter<AppState> for GetRawTransactionEpochList {
     type Response = GetRawTransactionEpochListResponse;
@@ -130,14 +186,16 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         let provided_epoch = rollup_metadata.provided_epoch; // 저번 get 요청에서 처리된 epoch 최댓값(이 epoch 이하는 다시 볼 필요 없음)
         tracing::info!("💡provided_epoch(RollupMetadata에서 받아온 값): {:?}", provided_epoch); // test code
 
-        let last_completed_batch_number = rollup_metadata.completed_batch_number; // 저번 get 요청에서 처리된 가장 최신의 batch 번호
-        let mut current_completed_batch_number = last_completed_batch_number; // rollup_metadata.completed_batch_number 갱신을 위한 mut 변수
-        let mut current_provided_batch_number = last_completed_batch_number + 1; // 현재 처리 시작할 batch 번호
+        let max_contiguous = rollup_metadata.max_contiguous; // 저번 get 요청에서 처리된 가장 최신의 batch 번호들 중 앞에 구멍이 없는 최댓값
+        let mut current_completed_batch_number = max_contiguous; // rollup_metadata.max_contiguous 갱신을 위한 mut 변수
+        let mut current_provided_batch_number = max_contiguous + 1; // 현재 처리 시작할 batch 번호
 
         tracing::info!("current_completed_batch_number(Batch 순회 전): {:?}", current_completed_batch_number); // test code
         // println!("current_provided_batch_number(Batch 순회 전): {:?}", current_provided_batch_number); // test code
         
         let mut iteration_count = 0; // test code
+
+        let mut mut_rollup_metadata = RollupMetadata::get_mut(&rollup_id)?;
 
         while let Ok(batch) = Batch::get(&rollup_id, current_provided_batch_number as u64) { // current_provided_batch_number is i64, but Batch::get requires u64. This variable is always a non-negative integer so this won't cause an error.
             tracing::info!("= {:?}th batch interation(Batch 번호: {:?}) =", iteration_count, current_provided_batch_number); // test code
@@ -155,8 +213,13 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 raw_transaction_meta_list.push(meta);
             }
 
-            if transactions_in_batch == 0 { // All transactions in the batch have been processed
-                current_completed_batch_number += 1; // TODO: current_completed_batch_number 갱신 로직 변경 필요 -> 필요없음
+            if transactions_in_batch == 0 {
+                // 해당 배치의 모든 트랜잭션이 처리 완료된 경우, 연속 완료 구간을 안전하게 갱신
+                mark_batch_completed(
+                    current_provided_batch_number as u64,
+                    &mut current_completed_batch_number,
+                    &mut mut_rollup_metadata.out_of_order_completed_batches,
+                );
             }
             
             current_provided_batch_number += 1; 
@@ -164,7 +227,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             iteration_count += 1; // test code
         }
 
-        let current_provided_transaction_order = rollup_metadata.provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 지난 요청에서 어디까지 진행됐는지 받아옴
+        let current_provided_transaction_order = mut_rollup_metadata.provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 지난 요청에서 어디까지 진행됐는지 받아옴
         tracing::info!("💡current_provided_transaction_order(RollupMetadata에서 받아온 값): {:?}", current_provided_transaction_order); // test code
 
         tracing::info!("current_completed_batch_number(Batch 순회 후): {:?}", current_completed_batch_number); // test code
@@ -211,17 +274,17 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             self.leader_change_message.platform_block_height,
         )?;
 
-        let mut mut_rollup_metadata = RollupMetadata::get_mut(&rollup_id)?;
-
+        /* // 03.05 수정사항: batch_number_list_to_delete는 사용하지 않는 코드이므로 주석 처리함
         let mut batch_number_list_to_delete = Vec::new();
         for batch_number in (last_completed_batch_number + 1)..current_completed_batch_number {
             batch_number_list_to_delete.push(batch_number);
         }
+        */
 
         mut_rollup_metadata.provided_batch_number = current_provided_batch_number as u64;
         mut_rollup_metadata.provided_transaction_order = current_provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 이번 요청에서 어디까지 진행됐는지 저장
 
-        mut_rollup_metadata.completed_batch_number = current_completed_batch_number; // new code
+        mut_rollup_metadata.max_contiguous = current_completed_batch_number; // new code
         mut_rollup_metadata.provided_epoch = latest_completed_epoch as i64; // new code
 
         let leader_tx_orderer_rpc_info = cluster
@@ -396,7 +459,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             mut_rollup_metadata.provided_batch_number,
             mut_rollup_metadata.provided_transaction_order,
             mut_rollup_metadata.provided_epoch,
-            mut_rollup_metadata.completed_batch_number,
+            mut_rollup_metadata.max_contiguous,
             &self.leader_change_message.current_leader_tx_orderer_address,
             old_epoch,
             new_epoch,
@@ -522,6 +585,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
     }
 }
 
+/*
 // not used
 pub async fn sync_rollup_metadata(
     context: AppState,
@@ -584,3 +648,4 @@ pub async fn sync_rollup_metadata(
 
     Ok(())
 }
+*/

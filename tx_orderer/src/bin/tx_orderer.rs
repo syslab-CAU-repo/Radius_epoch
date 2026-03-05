@@ -333,9 +333,12 @@ async fn initialize_cluster_rpc_server(context: AppState) -> Result<(), Error> {
         .register_rpc_method::<cluster::RemoveMevSearcherInfo>()
         .await?;
 
+    /*
+    // 03.05 수정사항: set_leader_tx_orderer 요청은 더이상 쓰이지 않으므로 주석 처리함
     cluster_rpc_server
         .register_rpc_method::<cluster::SetLeaderTxOrderer>()
         .await?;
+    */
 
     // === new code: Epoch 전파 to non-leader nodes ===
     cluster_rpc_server
@@ -354,9 +357,12 @@ async fn initialize_cluster_rpc_server(context: AppState) -> Result<(), Error> {
         .register_rpc_method::<cluster::SyncCanProvideEpochInfo>()
         .await?;
 
+    /*
+    // 03.05 수정사항: sync_rollup_metadata 요청은 더이상 쓰이지 않으므로 주석 처리함
     cluster_rpc_server
         .register_rpc_method::<cluster::SyncRollupMetadata>()
         .await?;
+    */
     // === new code end ===
 
     let cluster_handle = cluster_rpc_server.init(cluster_rpc_url.clone()).await?;
