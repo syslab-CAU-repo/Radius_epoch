@@ -545,6 +545,7 @@ pub async fn sync_leader_tx_orderer(
     provided_transaction_order: i64,
     provided_epoch: i64, // new code
     max_contiguous: i64, // new code
+    out_of_order_completed_batches: BTreeSet<u64>, // new code
     current_leader_tx_orderer_address: &Address, // new code
     old_epoch: i64, // new code
     new_epoch: i64, // new code
@@ -589,6 +590,7 @@ pub async fn sync_leader_tx_orderer(
             provided_transaction_order,
             provided_epoch: provided_epoch, // new code
             max_contiguous: max_contiguous, // new code
+            out_of_order_completed_batches,
 
             old_epoch: Some(old_epoch), // new code
             new_epoch: Some(new_epoch), // new code

@@ -1,4 +1,7 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    collections::BTreeSet,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use radius_sdk::json_rpc::server::ProcessPriority;
 
@@ -20,6 +23,8 @@ pub struct SyncLeaderTxOrderer {
 
     pub provided_epoch: i64, // new code
     pub max_contiguous: i64, // new code
+
+    pub out_of_order_completed_batches: BTreeSet<u64>, // new code
 
     pub old_epoch: Option<i64>, // new code
     pub new_epoch: Option<i64>, // new code
@@ -240,6 +245,8 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
 
         mut_rollup_metadata.provided_epoch = self.provided_epoch; // new code -> 🚩 provided_epoch 
         mut_rollup_metadata.max_contiguous = self.max_contiguous; // new code -> 🚩 max_contiguous 
+        mut_rollup_metadata.out_of_order_completed_batches =
+            self.out_of_order_completed_batches.clone(); // new code -> 🚩 out_of_order_completed_batches
 
         // === test code start ===
         // println!("🔄🔄 🔥🔥🔥🔥🔥 mut_rollup_metadata initialization before update 🔥🔥🔥🔥🔥"); // test code

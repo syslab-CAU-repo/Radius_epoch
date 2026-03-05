@@ -460,6 +460,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             mut_rollup_metadata.provided_transaction_order,
             mut_rollup_metadata.provided_epoch,
             mut_rollup_metadata.max_contiguous,
+            mut_rollup_metadata.out_of_order_completed_batches.clone(),
             &self.leader_change_message.current_leader_tx_orderer_address,
             old_epoch,
             new_epoch,
