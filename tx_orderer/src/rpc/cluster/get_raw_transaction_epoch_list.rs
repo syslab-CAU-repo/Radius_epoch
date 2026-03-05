@@ -181,7 +181,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 });
             }
         };
-        tracing::info!("💡epoch(CanProvideEpochInfo에서 받아온 값): {:?}", latest_completed_epoch); // test code
+        tracing::info!("💡latest_completed_epoch(CanProvideEpochInfo에서 받아온 값): {:?}", latest_completed_epoch); // test code
 
         let provided_epoch = rollup_metadata.provided_epoch; // 저번 get 요청에서 처리된 epoch 최댓값(이 epoch 이하는 다시 볼 필요 없음)
         tracing::info!("💡provided_epoch(RollupMetadata에서 받아온 값): {:?}", provided_epoch); // test code
@@ -196,6 +196,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         let mut iteration_count = 0; // test code
 
         let mut mut_rollup_metadata = RollupMetadata::get_mut(&rollup_id)?;
+
+        let mut get_succeeded_batch = false;
 
         while let Ok(batch) = Batch::get(&rollup_id, current_provided_batch_number as u64) { // current_provided_batch_number is i64, but Batch::get requires u64. This variable is always a non-negative integer so this won't cause an error.
             tracing::info!("= {:?}th batch interation(Batch 번호: {:?}) =", iteration_count, current_provided_batch_number); // test code
@@ -224,6 +226,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             
             current_provided_batch_number += 1; 
 
+            get_succeeded_batch = true;
+
             iteration_count += 1; // test code
         }
 
@@ -233,6 +237,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         tracing::info!("current_completed_batch_number(Batch 순회 후): {:?}", current_completed_batch_number); // test code
         // println!("current_provided_batch_number(Batch 순회 후): {:?}", current_provided_batch_number); // test code
         // println!("current_provided_transaction_order(Batch 순회 후): {:?}", current_provided_transaction_order); // test code
+
+        let mut get_succeeded_can_provide_transaction_info = false;
 
         if let Ok(can_provide_transaction_info) = CanProvideTransactionInfo::get(&rollup_id) {
             if let Some(can_provide_transaction_orderers) = can_provide_transaction_info
@@ -256,6 +262,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                     provided_epoch,
                 )?;
 
+                get_succeeded_can_provide_transaction_info = true;
+
                 /*
                 if current_provided_transaction_order
                     == rollup.max_transaction_count_per_batch as i64 - 1
@@ -264,7 +272,18 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                     current_provided_transaction_order = -1;
                 }
                 */
+            } else {
+                tracing::info!(
+                    "CanProvideTransactionInfo는 있었지만 해당 batch에 대한 transaction order 정보가 없습니다. rollup_id: {:?}, batch_number: {:?}",
+                    rollup_id,
+                    current_provided_batch_number
+                );
             }
+        } else {
+            tracing::info!(
+                "CanProvideTransactionInfo::get(&rollup_id)에 실패했습니다. rollup_id: {:?}",
+                rollup_id
+            );
         }
 
         let cluster = Cluster::get(
@@ -285,7 +304,12 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         mut_rollup_metadata.provided_transaction_order = current_provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 이번 요청에서 어디까지 진행됐는지 저장
 
         mut_rollup_metadata.max_contiguous = current_completed_batch_number; // new code
-        mut_rollup_metadata.provided_epoch = latest_completed_epoch as i64; // new code
+
+        if get_succeeded_batch && get_succeeded_can_provide_transaction_info {
+            mut_rollup_metadata.provided_epoch = latest_completed_epoch as i64; // new code
+        } else {
+            tracing::info!("provided_epoch를 갱신하지 않습니다. 기존 provided_epoch: {:?}, latest_completed_epoch: {:?}", mut_rollup_metadata.provided_epoch, latest_completed_epoch);
+        }
 
         let leader_tx_orderer_rpc_info = cluster
             .get_tx_orderer_rpc_info(&self.leader_change_message.next_leader_tx_orderer_address)
