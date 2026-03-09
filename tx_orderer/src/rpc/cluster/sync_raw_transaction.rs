@@ -120,10 +120,12 @@ impl RpcParameter<AppState> for SyncRawTransaction {
             .expect("Time went backwards")
             .as_nanos();
 
+        /*
         tracing::info!(
             "sync_raw_transaction - total take time: {:?}",
             end_sync_raw_transaction_time - start_sync_raw_transaction_time
         );
+        */
 
         Ok(())
     }
