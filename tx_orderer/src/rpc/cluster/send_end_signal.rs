@@ -150,7 +150,7 @@ impl RpcParameter<AppState> for SendEndSignal {
             })?;
         }
 
-        tracing::info!("📤📤 epoch completed: (epoch: {:?}, completed: {:?})", self.epoch, mut_cluster_metadata.all_nodes_sent_signal(self.epoch, total_nodes)); // test code
+        tracing::info!("SendEndSignal handler() - epoch completed: (epoch: {:?}, completed: {:?})", self.epoch, mut_cluster_metadata.all_nodes_sent_signal(self.epoch, total_nodes)); // test code
 
         mut_cluster_metadata.update().map_err(|e| {
             tracing::error!(

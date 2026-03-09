@@ -191,10 +191,27 @@ async fn main() {
                             tx_list_len, cumulative_tx_count
                         );
 
-                        if let Ok(pretty) = serde_json::to_string_pretty(&response) {
-                            info!("Response\n{}", pretty);
+                        if let Some(list) = response["result"]["raw_transaction_meta_list"].as_array()
+                        {
+                            for meta in list {
+                                let epoch = meta["epoch"].as_u64();
+                                let batch_number = meta["batch_number"].as_u64();
+                                let transaction_order = meta["transaction_order"].as_u64();
+
+                                match (epoch, batch_number, transaction_order) {
+                                    (Some(epoch), Some(batch_number), Some(transaction_order)) => {
+                                        info!("({}, {}, {}),", epoch, batch_number, transaction_order);
+                                    }
+                                    _ => {
+                                        info!(?meta, "Unexpected raw_transaction_meta_list item");
+                                    }
+                                }
+                            }
                         } else {
-                            info!(?response, "Response");
+                            info!(
+                                result = ?response["result"],
+                                "No raw_transaction_meta_list in response result"
+                            );
                         }
                         rollup_block_height += 1;
                     }

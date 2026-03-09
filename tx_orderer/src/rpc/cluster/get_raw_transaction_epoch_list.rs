@@ -181,16 +181,16 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 });
             }
         };
-        tracing::info!("💡latest_completed_epoch(CanProvideEpochInfo에서 받아온 값): {:?}", latest_completed_epoch); // test code
+        // tracing::info!("💡latest_completed_epoch(CanProvideEpochInfo에서 받아온 값): {:?}", latest_completed_epoch); // test code
 
         let provided_epoch = rollup_metadata.provided_epoch; // 저번 get 요청에서 처리된 epoch 최댓값(이 epoch 이하는 다시 볼 필요 없음)
-        tracing::info!("💡provided_epoch(RollupMetadata에서 받아온 값): {:?}", provided_epoch); // test code
+        // tracing::info!("💡provided_epoch(RollupMetadata에서 받아온 값): {:?}", provided_epoch); // test code
 
         let max_contiguous = rollup_metadata.max_contiguous; // 저번 get 요청에서 처리된 가장 최신의 batch 번호들 중 앞에 구멍이 없는 최댓값
         let mut current_completed_batch_number = max_contiguous; // rollup_metadata.max_contiguous 갱신을 위한 mut 변수
         let mut current_provided_batch_number = max_contiguous + 1; // 현재 처리 시작할 batch 번호
 
-        tracing::info!("current_completed_batch_number(Batch 순회 전): {:?}", current_completed_batch_number); // test code
+        // tracing::info!("current_completed_batch_number(Batch 순회 전): {:?}", current_completed_batch_number); // test code
         // println!("current_provided_batch_number(Batch 순회 전): {:?}", current_provided_batch_number); // test code
         
         let mut iteration_count = 0; // test code
@@ -353,7 +353,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         */
 
         if mut_cluster_metadata.is_leader == false {
-            tracing::info!("*** if mut_cluster_metadata.is_leader == false ***"); // test code
+            // tracing::info!("*** if mut_cluster_metadata.is_leader == false ***"); // test code
 
             if let Some(current_leader_tx_orderer_rpc_info) =
                 mut_cluster_metadata.leader_tx_orderer_rpc_info.clone()
@@ -363,8 +363,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                     .clone()
                     .unwrap();
 
-                tracing::info!("current_leader_tx_orderer_cluster_rpc_url: {:?}", current_leader_tx_orderer_cluster_rpc_url); // test code
-                tracing::info!("current_leader_tx_orderer_rpc_info: {:?}", current_leader_tx_orderer_rpc_info); // test code
+                // tracing::info!("current_leader_tx_orderer_cluster_rpc_url: {:?}", current_leader_tx_orderer_cluster_rpc_url); // test code
+                // tracing::info!("current_leader_tx_orderer_rpc_info: {:?}", current_leader_tx_orderer_rpc_info); // test code
 
                 let parameter = GetOrderCommitmentInfo {
                     rollup_id: self.rollup_id.clone(),

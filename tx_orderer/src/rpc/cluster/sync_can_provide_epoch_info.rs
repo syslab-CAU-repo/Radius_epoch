@@ -16,9 +16,9 @@ impl RpcParameter<AppState> for SyncCanProvideEpochInfo {
     }
 
     async fn handler(self, context: AppState) -> Result<Self::Response, RpcError> {
-        // println!("=== 🔄🕐🔄🕐🔄 sync_can_provide_epoch_info 시작 🕐🔄🕐🔄🕐 ==="); // test code
+        println!("=== sync_can_provide_epoch_info handler() 시작 ==="); // test code
 
-        // println!("epoch: {:?}", self.epoch); // test code
+        println!("epoch: {:?}", self.epoch); // test code
 
         CanProvideEpochInfo::add_completed_epoch(&self.rollup_id, self.epoch).map_err(|e| {
             tracing::error!(
@@ -30,7 +30,7 @@ impl RpcParameter<AppState> for SyncCanProvideEpochInfo {
             e
         })?;
 
-        // println!("=== 🔄🕐🔄🕐🔄 sync_can_provide_epoch_info 종료 🕐🔄🕐🔄🕐 ==="); // test code
+        println!("=== sync_can_provide_epoch_info handler() 종료 ==="); // test code
 
         Ok(())
     }

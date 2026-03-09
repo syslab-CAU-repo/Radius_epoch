@@ -153,14 +153,14 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
         // 📌 epoch_leader_map ✅
         // 📌 epoch_node_bitmap -> no need to synchronize
 
-        tracing::info!("🔄🔄 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
+        // tracing::info!("🔄🔄 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
         // println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
         // println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
         // println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
         tracing::info!("🔄🔄 💡mut_cluster_metadata.epoch(업데이트 전): {:?}", mut_cluster_metadata.epoch); // test code
         // println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
         // println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
-        tracing::info!("🔄🔄 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
+        // tracing::info!("🔄🔄 🚀🚀🚀🚀🚀 mut_cluster_metadata before update 🚀🚀🚀🚀🚀"); // test code
 
         mut_cluster_metadata.platform_block_height =
             self.leader_change_message.platform_block_height; // 🚩 platform_block_height 
@@ -206,14 +206,14 @@ impl RpcParameter<AppState> for SyncLeaderTxOrderer {
         // === new code end ===
         // 💫💫💫💫💫 mut_cluster_metadata synchronization end(SyncLeaderTxOrderer) 💫💫💫💫💫
 
-        tracing::info!("🔄🔄 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
+        // tracing::info!("🔄🔄 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
         // println!("mut_cluster_metadata.platform_block_height: {:?}", mut_cluster_metadata.platform_block_height); // test code
         // println!("mut_cluster_metadata.is_leader: {:?}", mut_cluster_metadata.is_leader); // test code
         // println!("mut_cluster_metadata.leader_tx_orderer_rpc_info: {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
         tracing::info!("🔄🔄 💡mut_cluster_metadata.epoch(업데이트 후): {:?}", mut_cluster_metadata.epoch); // test code
         // println!("mut_cluster_metadata.epoch_node_bitmap: {:?}", mut_cluster_metadata.epoch_node_bitmap); // test code
         // println!("mut_cluster_metadata.epoch_leader_map: {:?}", mut_cluster_metadata.epoch_leader_map); // test code
-        tracing::info!("🔄🔄 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
+        // tracing::info!("🔄🔄 💫💫💫💫💫 mut_cluster_metadata after update 💫💫💫💫💫"); // test code
 
         mut_cluster_metadata.update()?;
 
@@ -345,9 +345,9 @@ pub fn send_end_signal_to_epoch_leader(
         let sender_address = signer.address().clone();
         let sender_address_clone = sender_address.clone();
 
-        tracing::info!("📤⚙️ send_end_signal 요청 보내는 노드: {:?}", sender_address_clone); // test code
-        tracing::info!("📤⚙️ epoch: {:?}", epoch); // test code
-        tracing::info!("📤⚙️ epoch {:?}의 리더 노드 url: {:?}", epoch, epoch_leader_rpc_url); // test code
+        // tracing::info!("📤⚙️ send_end_signal 요청 보내는 노드: {:?}", sender_address_clone); // test code
+        tracing::info!("send_end_signal to epoch leader - epoch: {:?}", epoch); // test code
+        tracing::info!("send_end_signal to epoch leader - epoch {:?}의 리더 노드 url: {:?}", epoch, epoch_leader_rpc_url); // test code
 
         let parameter = SendEndSignal {
             rollup_id,
