@@ -359,6 +359,24 @@ pub fn sync_batch_creation(
             return;
         }
 
+        // Log which signer/address will be used for leader_tx_orderer_signature
+        match context.get_signer(platform).await {
+            Ok(signer) => {
+                tracing::info!(
+                    "sync_batch_creation signer address - platform: {:?}, address: {:?}",
+                    platform,
+                    signer.address()
+                );
+            }
+            Err(e) => {
+                tracing::error!(
+                    "sync_batch_creation failed to get signer for logging - platform: {:?}, error: {}",
+                    platform,
+                    e
+                );
+            }
+        }
+
         let batch_creation_massage = BatchCreationMessage {
             rollup_id: rollup_id.clone(),
             batch_number,
