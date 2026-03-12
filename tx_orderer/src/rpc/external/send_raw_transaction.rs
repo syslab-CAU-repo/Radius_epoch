@@ -359,6 +359,7 @@ pub fn sync_batch_creation(
             return;
         }
 
+        // === test code start ===
         // Log which signer/address will be used for leader_tx_orderer_signature
         match context.get_signer(platform).await {
             Ok(signer) => {
@@ -376,6 +377,7 @@ pub fn sync_batch_creation(
                 );
             }
         }
+        // === test code end ===
 
         let batch_creation_massage = BatchCreationMessage {
             rollup_id: rollup_id.clone(),

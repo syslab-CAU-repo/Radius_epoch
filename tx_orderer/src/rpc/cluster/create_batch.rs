@@ -22,7 +22,7 @@ impl RpcParameter<AppState> for SyncBatchCreation {
     }
 
     async fn handler(self, context: AppState) -> Result<Self::Response, RpcError> {
-        println!("sync_batch_creation() handler() 시작"); // test code
+        tracing::info!("sync_batch_creation() handler() 시작"); // test code
 
         let rollup_id = self.batch_creation_massage.rollup_id;
 

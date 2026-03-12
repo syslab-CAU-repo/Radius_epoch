@@ -259,6 +259,16 @@ pub async fn create_batch_task(
             {
                 tracing::info!("create_batch_task() - 6"); // test code
 
+                tracing::info!(
+                    "successfully verified leader tx orderer signature - rollup_id: {:?}, batch_number: {:?} / tx_orderer_address_list: {:?} / signer_address: {:?} / batch_commitment: {:?} / raw_transaction_list_count: {:?}",
+                    rollup_id,
+                    batch_number,
+                    tx_orderer_address_list,
+                    signer_address,
+                    BatchCommitment::from(batch_commitment),
+                    raw_transactions.len()
+                );
+                
                 let batch = Batch::new(
                     batch_number,
                     encrypted_transactions,
