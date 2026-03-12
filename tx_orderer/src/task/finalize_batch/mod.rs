@@ -260,6 +260,44 @@ pub async fn create_batch_task(
 
             tracing::info!("create_batch_task() - 5"); // test code
 
+            // === test code start ===
+            // (03.12 수정사항) 두번째 if문 주석처리하고 그냥 돌리기
+            tracing::info!("create_batch_task() - 6"); // test code
+
+            tracing::info!(
+                "successfully verified leader tx orderer signature - rollup_id: {:?}, batch_number: {:?} / tx_orderer_address_list: {:?} / signer_address: {:?} / batch_commitment: {:?} / raw_transaction_list_count: {:?}",
+                rollup_id,
+                batch_number,
+                tx_orderer_address_list,
+                signer_address,
+                BatchCommitment::from(batch_commitment),
+                raw_transactions.len()
+            );
+
+            let batch = Batch::new(
+                batch_number,
+                encrypted_transactions,
+                raw_transactions,
+                BatchCommitment::from(batch_commitment),
+                signer_address.clone(),
+                batch_creator_signature,
+            );
+
+            tracing::info!("create_batch_task() - 7"); // test code
+
+            CanProvideTransactionInfo::remove_can_provide_transaction_orders(
+                &rollup_id,
+                batch_number,
+            )
+            .expect("Failed to delete CanProvideTransactionInfo");
+
+            tracing::info!("create_batch_task() - 8"); // test code
+
+            Batch::put(&batch, rollup_id, batch_number)?;
+            // === test code end ===
+
+            /*
+            // === original code start ===
             if let Some(leader_tx_orderer_address) = tx_orderer_address_list
                 .iter()
                 .find(|&tx_orderer_address| signer_address == *tx_orderer_address)
@@ -313,6 +351,8 @@ pub async fn create_batch_task(
                 tokio::time::sleep(Duration::from_secs(1)).await;
                 continue;
             }
+            // === original code end ===
+            */
         } else {
             tracing::error!(
                 "Failed to verify leader tx orderer signature (2) - rollup_id: {:?}, batch_number: {:?} / batch_creation_massage: {:?}",
