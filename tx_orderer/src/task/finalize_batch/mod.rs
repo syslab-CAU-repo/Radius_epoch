@@ -90,6 +90,13 @@ async fn finalize_batch_task(
         tracing::info!("finalize_batch_task() - 3, batch_number: {:?}", batch_number); // test code
 
         let signer = context.get_signer(rollup.platform).await?;
+        // === test code start ===
+        tracing::info!(
+            "finalize_batch_task signer address - platform: {:?}, address: {:?}",
+            rollup.platform,
+            signer.address()
+        );
+        // === test code end ===
         let batch_creator_signature = signer.sign_message(&batch_commitment)?;
 
         let batch = Batch::new(
