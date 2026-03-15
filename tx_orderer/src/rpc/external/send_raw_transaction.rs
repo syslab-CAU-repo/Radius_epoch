@@ -32,8 +32,6 @@ impl RpcParameter<AppState> for SendRawTransaction {
 
         let rollup = Rollup::get(&self.rollup_id)?;
 
-        let mut mut_rollup_metadata = RollupMetadata::get_mut(&self.rollup_id)?;
-
         // println!("Rollup Max Transaction Count Per Batch: {}", mut_rollup_metadata.max_transaction_count_per_batch); // test code
 
         let cluster_metadata = ClusterMetadata::get(
@@ -128,10 +126,16 @@ impl RpcParameter<AppState> for SendRawTransaction {
                 .await?;
             }
 
+            let mut mut_rollup_metadata = RollupMetadata::get_mut(&self.rollup_id)?;
             // Now process the current transaction
             let batch_number = mut_rollup_metadata.batch_number;
             let transaction_order = mut_rollup_metadata.transaction_order;
             let transaction_hash = self.raw_transaction.raw_transaction_hash();
+
+            mut_rollup_metadata.transaction_order += 1;
+
+            let is_updated = mut_rollup_metadata.check_and_update_batch_info();
+            mut_rollup_metadata.update()?;
 
             RawTransactionModel::put_with_transaction_hash(
                 &self.rollup_id,
@@ -152,16 +156,11 @@ impl RpcParameter<AppState> for SendRawTransaction {
             let (_, pre_merkle_path) = merkle_tree.add_data(transaction_hash.as_ref()).await;
             drop(merkle_tree);
 
-            mut_rollup_metadata.transaction_order += 1;
             CanProvideTransactionInfo::add_can_provide_transaction_orders(
                 &self.rollup_id,
                 batch_number,
                 vec![transaction_order],
             )?;
-
-            let is_updated = mut_rollup_metadata.check_and_update_batch_info();
-
-            mut_rollup_metadata.update()?;
 
             if is_updated {
                 context
@@ -239,8 +238,6 @@ impl RpcParameter<AppState> for SendRawTransaction {
         } else if is_current_leader && !cluster_metadata.can_process_as_leader {
             // === Leader but no processing authority yet: queue the transaction ===
 
-            drop(mut_rollup_metadata);
-
             let pending_index = PendingRawTransactionModel::enqueue(
                 &self.rollup_id,
                 self.raw_transaction.clone(),
@@ -260,8 +257,6 @@ impl RpcParameter<AppState> for SendRawTransaction {
             ))
         } else {
             // === Not the leader: forward to the leader node ===
-
-            drop(mut_rollup_metadata);
 
             let leader_tx_orderer_rpc_info = raw_transaction_current_leader_tx_orderer_address
                 .as_ref()
@@ -320,6 +315,11 @@ async fn process_single_transaction(
     let transaction_order = mut_rollup_metadata.transaction_order;
     let transaction_hash = raw_transaction.raw_transaction_hash();
 
+    mut_rollup_metadata.transaction_order += 1;
+    let is_updated = mut_rollup_metadata.check_and_update_batch_info();
+
+    mut_rollup_metadata.update()?;
+
     RawTransactionModel::put_with_transaction_hash(
         rollup_id,
         &transaction_hash,
@@ -339,16 +339,11 @@ async fn process_single_transaction(
     let (_, _pre_merkle_path) = merkle_tree.add_data(transaction_hash.as_ref()).await;
     drop(merkle_tree);
 
-    mut_rollup_metadata.transaction_order += 1;
     CanProvideTransactionInfo::add_can_provide_transaction_orders(
         rollup_id,
         batch_number,
         vec![transaction_order],
     )?;
-
-    let is_updated = mut_rollup_metadata.check_and_update_batch_info();
-
-    mut_rollup_metadata.update()?;
 
     if is_updated {
         context
