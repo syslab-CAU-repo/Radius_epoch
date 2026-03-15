@@ -775,7 +775,7 @@ pub fn my_extract_raw_transactions_with_meta(
     epoch: i64,
     provided_epoch: i64,
     batch_number: u64,
-    transactions_in_batch: &mut i32,
+    pending_uncompleted_epoch_count: &mut i32,
 ) -> Vec<(String, RawTransactionMeta)> {
     batch
         .raw_transaction_list
@@ -785,7 +785,7 @@ pub fn my_extract_raw_transactions_with_meta(
             RawTransaction::Eth(eth_tx) => match eth_tx.epoch {
                 Some(tx_epoch) => {
                     if tx_epoch > epoch {
-                        *transactions_in_batch += 1;
+                        *pending_uncompleted_epoch_count += 1;
                         None
                     } else if provided_epoch >= 0 && tx_epoch <= provided_epoch { // (02.10 수정사항) tx_epoch < provided_epoch 대신 tx_epoch <= provided_epoch 사용
                         None

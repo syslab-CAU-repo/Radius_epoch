@@ -11,6 +11,7 @@ mod sync_max_gas_limit;
 mod sync_raw_transaction;
 mod sync_epoch; // new code
 mod send_end_signal; // new code
+mod enable_leader_processing;
 mod get_raw_transaction_epoch_list; // new code
 mod sync_can_provide_epoch_info; // new code
 mod sync_rollup_metadata; // new code
@@ -27,7 +28,8 @@ pub use sync_leader_tx_orderer::*;
 pub use sync_max_gas_limit::*;
 pub use sync_raw_transaction::*;
 pub use sync_epoch::*; // new code
-pub use send_end_signal::*; // new code 
+pub use send_end_signal::*; // new code
+pub use enable_leader_processing::*;
 pub use get_raw_transaction_epoch_list::*; // new code
 pub use sync_can_provide_epoch_info::*; // new code
 pub use sync_rollup_metadata::*; // new code

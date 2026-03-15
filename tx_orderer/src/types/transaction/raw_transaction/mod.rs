@@ -6,10 +6,12 @@ use crate::{
 mod eth_bundle_transaction;
 mod eth_transaction;
 mod model;
+mod pending_model;
 
 pub use eth_bundle_transaction::*;
 pub use eth_transaction::*;
 pub use model::*;
+pub use pending_model::*;
 
 #[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq)]
 pub struct RawTransactionHash(String);

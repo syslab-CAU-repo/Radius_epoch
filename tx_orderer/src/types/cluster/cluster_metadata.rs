@@ -17,6 +17,7 @@ pub struct ClusterMetadata {
     pub platform_block_height: u64,
 
     pub is_leader: bool,
+    pub can_process_as_leader: bool,
     pub leader_tx_orderer_rpc_info: Option<TxOrdererRpcInfo>,
 
     pub epoch: Option<i64>, // new code
@@ -37,6 +38,7 @@ impl ClusterMetadata {
             cluster_id,
             platform_block_height,
             is_leader: false,
+            can_process_as_leader: false,
             leader_tx_orderer_rpc_info: None,
             epoch: Some(0), // new code
             epoch_node_bitmap: HashMap::new(), // new code

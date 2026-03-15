@@ -350,6 +350,10 @@ async fn initialize_cluster_rpc_server(context: AppState) -> Result<(), Error> {
         .await?;
 
     cluster_rpc_server
+        .register_rpc_method::<cluster::EnableLeaderProcessing>()
+        .await?;
+
+    cluster_rpc_server
         .register_rpc_method::<cluster::GetRawTransactionEpochList>()
         .await?;
 

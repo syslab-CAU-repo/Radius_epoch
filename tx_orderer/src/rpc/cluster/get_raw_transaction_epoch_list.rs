@@ -202,20 +202,20 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         while let Ok(batch) = Batch::get(&rollup_id, current_provided_batch_number as u64) { // current_provided_batch_number is i64, but Batch::get requires u64. This variable is always a non-negative integer so this won't cause an error.
             tracing::info!("= {:?}th batch interation(Batch 번호: {:?}) =", iteration_count, current_provided_batch_number); // test code
 
-            let mut transactions_in_batch = 0;
+            let mut pending_uncompleted_epoch_count = 0;
             let extracted = my_extract_raw_transactions_with_meta(
                 batch,
                 latest_completed_epoch,
                 provided_epoch,
                 current_provided_batch_number as u64,
-                &mut transactions_in_batch,
+                &mut pending_uncompleted_epoch_count,
             );
             for (raw_transaction, meta) in extracted {
                 raw_transaction_epoch_list.push(raw_transaction);
                 raw_transaction_meta_list.push(meta);
             }
 
-            if transactions_in_batch == 0 {
+            if pending_uncompleted_epoch_count == 0 {
                 // 해당 배치의 모든 트랜잭션이 처리 완료된 경우, 연속 완료 구간을 안전하게 갱신
                 mark_batch_completed(
                     current_provided_batch_number as u64,

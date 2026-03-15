@@ -59,7 +59,7 @@ impl RpcParameter<AppState> for SendRawTransaction {
                     // println!("Enhanced transaction - Epoch: {:?}, Leader: {:?}", eth_tx.epoch, eth_tx.current_leader_tx_orderer_address); // test code
                 }
                 else {
-                    // println!("(Transaction is not from the client) Enhanced transaction - Epoch: {:?}, Leader: {:?}", eth_tx.epoch, eth_tx.current_leader_tx_orderer_address); // test code
+                    // Transaction already has epoch/leader set (not from client)
                 }
             }
             RawTransaction::EthBundle(_) => {}
@@ -111,29 +111,24 @@ impl RpcParameter<AppState> for SendRawTransaction {
             })?;
         // === new code end ===
 
-        // if cluster_metadata.is_leader { // old code
-        if is_current_leader { // new code
-            // === test code begin ===
-            // println!("=== Leader Node ===");
-            // println!("Cluster ID: {}", rollup.cluster_id);
-            // println!("Platform: {:?}", rollup.platform);
-            // println!("Liveness Service Provider: {:?}", rollup.liveness_service_provider);
-            // println!("Platform Block Height: {}", cluster_metadata.platform_block_height);
-            // === test code end ===
+        if is_current_leader && cluster_metadata.can_process_as_leader {
+            // === Leader with processing authority: order immediately ===
 
-            /* // old code
-            let cluster = Cluster::get(
-                rollup.platform,
-                rollup.liveness_service_provider,
-                &rollup.cluster_id,
-                cluster_metadata.platform_block_height,
-            )
-            .map_err(|error| {
-                tracing::error!("Failed to get cluster: {:?}", error);
-                Error::ClusterNotFound
-            })?;
-            */
+            // First, drain any pending transactions that were queued before authority was granted
+            let pending_txs = PendingRawTransactionModel::drain_all(&self.rollup_id)
+                .unwrap_or_default();
+            for pending_tx in pending_txs {
+                process_single_transaction(
+                    &context,
+                    &self.rollup_id,
+                    &rollup,
+                    &cluster,
+                    pending_tx,
+                )
+                .await?;
+            }
 
+            // Now process the current transaction
             let batch_number = mut_rollup_metadata.batch_number;
             let transaction_order = mut_rollup_metadata.transaction_order;
             let transaction_hash = self.raw_transaction.raw_transaction_hash();
@@ -177,8 +172,6 @@ impl RpcParameter<AppState> for SendRawTransaction {
                 finalize_batch(context.clone(), &self.rollup_id, batch_number);
             }
 
-            // println!("Order Commitment Type: {:?}", rollup.order_commitment_type);
-
             let order_commitment = issue_order_commitment(
                 context.clone(),
                 rollup.platform,
@@ -211,8 +204,7 @@ impl RpcParameter<AppState> for SendRawTransaction {
                 match self.raw_transaction.clone() {
                     RawTransaction::Eth(eth_raw_transaction) => {
                         let params = serde_json::json!([
-                            eth_raw_transaction.raw_transaction, // new code
-                            // eth_raw_transaction.0, // old code
+                            eth_raw_transaction.raw_transaction,
                             batch_number,
                             transaction_order
                         ]);
@@ -236,8 +228,6 @@ impl RpcParameter<AppState> for SendRawTransaction {
                 }
             }
 
-            // println!("=== SendRawTransaction 종료(leader node) ===");
-
             match rollup.order_commitment_type {
                 OrderCommitmentType::TransactionHash => Ok(OrderCommitment::Single(
                     SingleOrderCommitment::TransactionHash(TransactionHashOrderCommitment::new(
@@ -246,12 +236,42 @@ impl RpcParameter<AppState> for SendRawTransaction {
                 )),
                 OrderCommitmentType::Sign => Ok(order_commitment),
             }
-        } else {
-            // println!("=== SendRawTransaction 리더 아님 ===");
+        } else if is_current_leader && !cluster_metadata.can_process_as_leader {
+            // === Leader but no processing authority yet: queue the transaction ===
 
             drop(mut_rollup_metadata);
 
-            match cluster_metadata.leader_tx_orderer_rpc_info {
+            let pending_index = PendingRawTransactionModel::enqueue(
+                &self.rollup_id,
+                self.raw_transaction.clone(),
+            )?;
+
+            tracing::info!(
+                "Transaction queued as pending (index: {}) - leader not yet authorized to process, rollup_id: {}",
+                pending_index,
+                self.rollup_id,
+            );
+
+            let transaction_hash = self.raw_transaction.raw_transaction_hash();
+            Ok(OrderCommitment::Single(
+                SingleOrderCommitment::TransactionHash(TransactionHashOrderCommitment::new(
+                    transaction_hash.as_string(),
+                )),
+            ))
+        } else {
+            // === Not the leader: forward to the leader node ===
+
+            drop(mut_rollup_metadata);
+
+            let leader_tx_orderer_rpc_info = raw_transaction_current_leader_tx_orderer_address
+                .as_ref()
+                .and_then(|s| {
+                    radius_sdk::signature::Address::from_str(rollup.platform.into(), s).ok()
+                })
+                .and_then(|addr| cluster.get_tx_orderer_rpc_info(&addr))
+                .or_else(|| cluster_metadata.leader_tx_orderer_rpc_info.clone());
+
+            match leader_tx_orderer_rpc_info {
                 Some(leader_tx_orderer_rpc_info) => {
                     let leader_external_rpc_url = leader_tx_orderer_rpc_info
                         .external_rpc_url
@@ -285,6 +305,137 @@ impl RpcParameter<AppState> for SendRawTransaction {
             }
         }
     }
+}
+
+async fn process_single_transaction(
+    context: &AppState,
+    rollup_id: &RollupId,
+    rollup: &Rollup,
+    cluster: &Cluster,
+    raw_transaction: RawTransaction,
+) -> Result<(), RpcError> {
+    let mut mut_rollup_metadata = RollupMetadata::get_mut(rollup_id)?;
+
+    let batch_number = mut_rollup_metadata.batch_number;
+    let transaction_order = mut_rollup_metadata.transaction_order;
+    let transaction_hash = raw_transaction.raw_transaction_hash();
+
+    RawTransactionModel::put_with_transaction_hash(
+        rollup_id,
+        &transaction_hash,
+        raw_transaction.clone(),
+        true,
+    )?;
+
+    RawTransactionModel::put(
+        rollup_id,
+        batch_number,
+        transaction_order,
+        raw_transaction.clone(),
+        true,
+    )?;
+
+    let merkle_tree = context.merkle_tree_manager().get(rollup_id).await?;
+    let (_, _pre_merkle_path) = merkle_tree.add_data(transaction_hash.as_ref()).await;
+    drop(merkle_tree);
+
+    mut_rollup_metadata.transaction_order += 1;
+    CanProvideTransactionInfo::add_can_provide_transaction_orders(
+        rollup_id,
+        batch_number,
+        vec![transaction_order],
+    )?;
+
+    let is_updated = mut_rollup_metadata.check_and_update_batch_info();
+
+    mut_rollup_metadata.update()?;
+
+    if is_updated {
+        context
+            .merkle_tree_manager()
+            .insert(rollup_id, MerkleTree::new())
+            .await;
+
+        finalize_batch(context.clone(), rollup_id, batch_number);
+    }
+
+    let order_commitment = issue_order_commitment(
+        context.clone(),
+        rollup.platform,
+        rollup_id.clone(),
+        rollup.order_commitment_type,
+        transaction_hash.clone(),
+        batch_number,
+        transaction_order,
+        _pre_merkle_path,
+    )
+    .await?;
+
+    order_commitment.put(rollup_id, batch_number, transaction_order)?;
+
+    sync_raw_transaction(
+        context.clone(),
+        cluster.clone(),
+        rollup_id.clone(),
+        batch_number,
+        transaction_order,
+        raw_transaction.clone(),
+        order_commitment,
+        true,
+    );
+
+    Ok(())
+}
+
+// 이건 왜 만든거?
+pub async fn process_pending_transactions(
+    context: &AppState,
+    rollup_id: &RollupId,
+) -> Result<(), RpcError> {
+    let rollup = Rollup::get(rollup_id)?;
+
+    let cluster_metadata = ClusterMetadata::get(
+        rollup.platform,
+        rollup.liveness_service_provider,
+        &rollup.cluster_id,
+    )
+    .map_err(|error| {
+        tracing::error!("Failed to get cluster metadata: {:?}", error);
+        Error::ClusterMetadataNotFound
+    })?;
+
+    let cluster = Cluster::get(
+        rollup.platform,
+        rollup.liveness_service_provider,
+        &rollup.cluster_id,
+        cluster_metadata.platform_block_height,
+    )
+    .map_err(|error| {
+        tracing::error!("Failed to get cluster: {:?}", error);
+        Error::ClusterNotFound
+    })?;
+
+    let pending_txs = PendingRawTransactionModel::drain_all(rollup_id)
+        .unwrap_or_default();
+
+    tracing::info!(
+        "Processing {} pending transactions for rollup_id: {}",
+        pending_txs.len(),
+        rollup_id,
+    );
+
+    for pending_tx in pending_txs {
+        process_single_transaction(
+            context,
+            rollup_id,
+            &rollup,
+            &cluster,
+            pending_tx,
+        )
+        .await?;
+    }
+
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

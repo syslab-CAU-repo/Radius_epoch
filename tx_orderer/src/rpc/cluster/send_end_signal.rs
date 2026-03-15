@@ -2,7 +2,7 @@ use crate::rpc::prelude::*;
 
 use radius_sdk::signature::Address;
 
-use super::SyncCanProvideEpochInfo;
+use super::{EnableLeaderProcessing, SyncCanProvideEpochInfo};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SendEndSignal {
@@ -134,10 +134,14 @@ impl RpcParameter<AppState> for SendEndSignal {
 
         // 노드 인덱스에 대응되는 비트 설정
         mut_cluster_metadata.set_node_bit(self.epoch, node_index);
-        
+
         // 모든 노드가 시그널을 보냈는지 확인
         let total_nodes = cluster.tx_orderer_rpc_infos.len();
+        let mut next_leader_rpc_url = None;
         if mut_cluster_metadata.all_nodes_sent_signal(self.epoch, total_nodes) {
+            // 현재 리더의 can_process_as_leader를 false로 설정
+            mut_cluster_metadata.can_process_as_leader = false;
+
             // CanProvideEpochInfo에 epoch 추가
             CanProvideEpochInfo::add_completed_epoch(&self.rollup_id, self.epoch).map_err(|e| {
                 tracing::error!(
@@ -148,6 +152,11 @@ impl RpcParameter<AppState> for SendEndSignal {
                 );
                 e
             })?;
+
+            // 다음 epoch 리더에게 can_process_as_leader=true 신호를 보내기 위해 URL 저장
+            let next_epoch = self.epoch + 1;
+            next_leader_rpc_url =
+                mut_cluster_metadata.epoch_leader_map.get(&next_epoch).cloned();
         }
 
         tracing::info!("SendEndSignal handler() - epoch completed: (epoch: {:?}, completed: {:?})", self.epoch, mut_cluster_metadata.all_nodes_sent_signal(self.epoch, total_nodes)); // test code
@@ -162,6 +171,24 @@ impl RpcParameter<AppState> for SendEndSignal {
             );
             e
         })?;
+
+        // 다음 리더에게 can_process_as_leader=true 설정 신호 전송
+        if let Some(url) = next_leader_rpc_url {
+            let context = context.clone();
+            let rollup_id = self.rollup_id.clone();
+            tokio::spawn(async move {
+                let parameter = EnableLeaderProcessing { rollup_id };
+                let _ = context
+                    .rpc_client()
+                    .fire_and_forget_multicast(
+                        vec![url],
+                        EnableLeaderProcessing::method(),
+                        &parameter,
+                        Id::Null,
+                    )
+                    .await;
+            });
+        }
 
         sync_can_provide_epoch_info(
             context.clone(),
