@@ -455,6 +455,9 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         mut_cluster_metadata.is_leader = is_next_leader; // 🚩 is_leader 
         mut_cluster_metadata.leader_tx_orderer_rpc_info = Some(leader_tx_orderer_rpc_info.clone()); // 🚩 leader_tx_orderer_rpc_info 
 
+        tracing::info!("mut_cluster_metadata.is_leader(after update): {:?}", mut_cluster_metadata.is_leader); // test code
+        tracing::info!("mut_cluster_metadata.leader_tx_orderer_rpc_info(after update): {:?}", mut_cluster_metadata.leader_tx_orderer_rpc_info); // test code
+
         // === new code start ===
         let old_epoch = if let Some(epoch) = mut_cluster_metadata.epoch {
             epoch
@@ -465,6 +468,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 raw_transaction_meta_list: Vec::new(),
             });
         };
+
+        tracing::info!("old_epoch: {:?}", old_epoch); // test code
 
         // old_epoch의 리더 RPC URL을 epoch_leader_map에 저장 (이미 존재하지 않을 때만)
         if !mut_cluster_metadata.epoch_leader_map.contains_key(&old_epoch) {
@@ -479,6 +484,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
 
         mut_cluster_metadata.epoch = Some(old_epoch + 1); // 🚩 epoch 
 
+        tracing::info!("mut_cluster_metadata.epoch: {:?}", mut_cluster_metadata.epoch); // test code
+
         let new_epoch = if let Some(epoch) = mut_cluster_metadata.epoch {
             epoch
         } else {
@@ -489,8 +496,11 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             });
         };
 
+        tracing::info!("new_epoch: {:?}", new_epoch); // test code
+
         // new_epoch의 리더 RPC URL을 epoch_leader_map에 저장
         if let Some(cluster_rpc_url) = &leader_tx_orderer_rpc_info.cluster_rpc_url {
+            tracing::info!("new_epoch의 리더 RPC URL을 epoch_leader_map에 저장"); // test code
             mut_cluster_metadata.epoch_leader_map.insert(new_epoch, cluster_rpc_url.clone()); // 🚩 epoch_leader_map
         } else {
             tracing::error!(
@@ -511,6 +521,8 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             );
             Error::GeneralError("epoch_leader_rpc_url not found".into())
         })?;
+
+        tracing::info!("epoch_leader_rpc_url(old epoch의 리더 RPC URL): {:?}", epoch_leader_rpc_url); // test code
 
         /* // ??? 이거 들어가야함???
         let signer = context.get_signer(rollup.platform).await?;
