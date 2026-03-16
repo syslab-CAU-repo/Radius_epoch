@@ -199,6 +199,11 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
 
         let mut get_succeeded_batch = false;
 
+        let start_batch_loop = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+
         while let Ok(batch) = Batch::get(&rollup_id, current_provided_batch_number as u64) { // current_provided_batch_number is i64, but Batch::get requires u64. This variable is always a non-negative integer so this won't cause an error.
             tracing::info!("= {:?}th batch interation(Batch 번호: {:?}) =", iteration_count, current_provided_batch_number); // test code
 
@@ -231,6 +236,16 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             iteration_count += 1; // test code
         }
 
+        let end_batch_loop = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+        tracing::info!(
+            "Batch loop took {} ns ({} ms)",
+            end_batch_loop - start_batch_loop,
+            (end_batch_loop - start_batch_loop) / 1_000_000
+        );
+
         let current_provided_transaction_order = mut_rollup_metadata.provided_transaction_order; // (02.05 수정사항) CanProvideTransactionInfo 지난 요청에서 어디까지 진행됐는지 받아옴
         tracing::info!("💡current_provided_transaction_order(RollupMetadata에서 받아온 값): {:?}", current_provided_transaction_order); // test code
 
@@ -239,6 +254,11 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         // println!("current_provided_transaction_order(Batch 순회 후): {:?}", current_provided_transaction_order); // test code
 
         let mut get_succeeded_can_provide_transaction_info = false;
+
+        let start_can_provide = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
 
         if let Ok(can_provide_transaction_info) = CanProvideTransactionInfo::get(&rollup_id) {
             if let Some(can_provide_transaction_orderers) = can_provide_transaction_info
@@ -285,6 +305,16 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 rollup_id
             );
         }
+
+        let end_can_provide = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+        tracing::info!(
+            "CanProvideTransactionInfo block took {} ns ({} ms)",
+            end_can_provide - start_can_provide,
+            (end_can_provide - start_can_provide) / 1_000_000
+        );
 
         let cluster = Cluster::get(
             rollup.platform,
@@ -352,6 +382,11 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
 
         */
 
+        let start_leader_rpc = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+
         if mut_cluster_metadata.is_leader == false {
             // tracing::info!("*** if mut_cluster_metadata.is_leader == false ***"); // test code
 
@@ -404,6 +439,16 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 );
             }
         }
+
+        let end_leader_rpc = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+        tracing::info!(
+            "Leader RPC block took {} ns ({} ms)",
+            end_leader_rpc - start_leader_rpc,
+            (end_leader_rpc - start_leader_rpc) / 1_000_000
+        );
 
         mut_cluster_metadata.platform_block_height =
             self.leader_change_message.platform_block_height; // 🚩 platform_block_height 
@@ -472,6 +517,11 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
         let current_tx_orderer_address = signer.address();
         */
 
+        let start_sync_leader = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+
         sync_leader_tx_orderer(
             context.clone(),
             cluster,
@@ -491,6 +541,16 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             epoch_leader_rpc_url.clone(), // 사용 안 함
         )
         .await;
+
+        let end_sync_leader = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+        tracing::info!(
+            "sync_leader_tx_orderer took {} ns ({} ms)",
+            end_sync_leader - start_sync_leader,
+            (end_sync_leader - start_sync_leader) / 1_000_000
+        );
 
         /*
         // ??? --> 이거 get_raw_transaction_epoch_list 따로 디커플링했을 때 추가한 코드 같은데 sync_leader_tx_orderer 함수에서 처리되는 거니까 이거 필요없음???
@@ -526,11 +586,26 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             );
         });
 
+        let start_send_end_signal = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+
         send_end_signal_to_epoch_leader(
             context.clone(),
             self.leader_change_message.rollup_id.clone(),
             old_epoch,
             epoch_leader_rpc_url,
+        );
+
+        let end_send_end_signal = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+        tracing::info!(
+            "send_end_signal_to_epoch_leader took {} ns ({} ms)",
+            end_send_end_signal - start_send_end_signal,
+            (end_send_end_signal - start_send_end_signal) / 1_000_000
         );
 
         let end_get_raw_transaction_epoch_list_time = SystemTime::now()
