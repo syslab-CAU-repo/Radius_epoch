@@ -13,6 +13,8 @@ impl RpcParameter<AppState> for EnableLeaderProcessing {
     }
 
     async fn handler(self, _context: AppState) -> Result<Self::Response, RpcError> {
+        tracing::info!("===== EnableLeaderProcessing handler() 시작 ====="); // test code
+
         let rollup = Rollup::get(&self.rollup_id).map_err(|e| {
             tracing::error!("Failed to retrieve rollup: {:?}", e);
             Error::RollupNotFound

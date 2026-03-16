@@ -172,22 +172,20 @@ impl RpcParameter<AppState> for SendEndSignal {
             e
         })?;
 
-        // 다음 리더에게 can_process_as_leader=true 설정 신호 전송
+        // 다음 리더에게 can_process_as_leader=true 설정 신호 전송 (spawn 없이 즉시 전송하여 리더 교체 지연 최소화)
         if let Some(url) = next_leader_rpc_url {
-            let context = context.clone();
-            let rollup_id = self.rollup_id.clone();
-            tokio::spawn(async move {
-                let parameter = EnableLeaderProcessing { rollup_id };
-                let _ = context
-                    .rpc_client()
-                    .fire_and_forget_multicast(
-                        vec![url],
-                        EnableLeaderProcessing::method(),
-                        &parameter,
-                        Id::Null,
-                    )
-                    .await;
-            });
+            let parameter = EnableLeaderProcessing {
+                rollup_id: self.rollup_id.clone(),
+            };
+            let _ = context
+                .rpc_client()
+                .fire_and_forget_multicast(
+                    vec![url],
+                    EnableLeaderProcessing::method(),
+                    &parameter,
+                    Id::Null,
+                )
+                .await;
         }
 
         sync_can_provide_epoch_info(
