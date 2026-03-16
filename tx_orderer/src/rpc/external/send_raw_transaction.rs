@@ -112,6 +112,11 @@ impl RpcParameter<AppState> for SendRawTransaction {
         if is_current_leader && cluster_metadata.can_process_as_leader {
             // === Leader with processing authority: order immediately ===
 
+            let start_drain_pending = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_nanos();
+
             // First, drain any pending transactions that were queued before authority was granted
             let pending_txs = PendingRawTransactionModel::drain_all(&self.rollup_id)
                 .unwrap_or_default();
@@ -125,6 +130,16 @@ impl RpcParameter<AppState> for SendRawTransaction {
                 )
                 .await?;
             }
+
+            let end_drain_pending = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_nanos();
+            tracing::info!(
+                "Drain pending transactions took {} ns ({} ms)",
+                end_drain_pending - start_drain_pending,
+                (end_drain_pending - start_drain_pending) / 1_000_000
+            );
 
             let mut mut_rollup_metadata = RollupMetadata::get_mut(&self.rollup_id)?;
             // Now process the current transaction
