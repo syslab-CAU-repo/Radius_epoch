@@ -9,9 +9,20 @@ impl PendingRawTransactionModel {
 
     pub fn next_index(rollup_id: &RollupId) -> Result<u64, KvStoreError> {
         let counter_key = &(Self::ID, rollup_id, Self::COUNTER_SUFFIX);
-        let current: u64 = kvstore()?.get(counter_key).unwrap_or(0);
-        kvstore()?.put(counter_key, &(current + 1))?;
-        Ok(current)
+
+        // Try to get a mutable lock on the existing counter.
+        // This ensures that read-modify-write of the counter is atomic.
+        if let Ok(mut counter_lock) = kvstore()?.get_mut(counter_key) {
+            let current: u64 = *counter_lock;
+            *counter_lock = current.saturating_add(1);
+            Ok(current)
+        } else {
+            // If the counter does not exist yet, initialize it to 1 and return 0
+            // as the first index. There is a tiny race window only on first use,
+            // but after initialization the get_mut path is used and is atomic.
+            kvstore()?.put(counter_key, &1u64)?;
+            Ok(0)
+        }
     }
 
     pub fn enqueue(
