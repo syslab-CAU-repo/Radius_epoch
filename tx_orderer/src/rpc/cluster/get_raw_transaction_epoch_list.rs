@@ -241,7 +241,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             .expect("Time went backwards")
             .as_nanos();
         tracing::info!(
-            "Batch loop took {} ns ({} ms)",
+            "⏱️Batch loop took {} ns ({} ms)",
             end_batch_loop - start_batch_loop,
             (end_batch_loop - start_batch_loop) / 1_000_000
         );
@@ -311,7 +311,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             .expect("Time went backwards")
             .as_nanos();
         tracing::info!(
-            "CanProvideTransactionInfo block took {} ns ({} ms)",
+            "⏱️CanProvideTransactionInfo block took {} ns ({} ms)",
             end_can_provide - start_can_provide,
             (end_can_provide - start_can_provide) / 1_000_000
         );
@@ -351,10 +351,25 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 Error::TxOrdererInfoNotFound
             })?;
 
+        let start_get_signer = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+
         let signer = context.get_signer(rollup.platform).await.map_err(|_| {
             tracing::error!("Signer not found for platform {:?}", rollup.platform);
             Error::SignerNotFound
         })?;
+
+        let end_get_signer = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+        tracing::info!(
+            "⏱️get_signer took {} ns ({} ms)",
+            end_get_signer - start_get_signer,
+            (end_get_signer - start_get_signer) / 1_000_000
+        );
 
         let tx_orderer_address = signer.address().clone();
 
@@ -388,7 +403,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             .as_nanos();
 
         if mut_cluster_metadata.is_leader == false {
-            // tracing::info!("*** if mut_cluster_metadata.is_leader == false ***"); // test code
+            tracing::info!("*** if mut_cluster_metadata.is_leader == false ***"); // test code
 
             if let Some(current_leader_tx_orderer_rpc_info) =
                 mut_cluster_metadata.leader_tx_orderer_rpc_info.clone()
@@ -445,7 +460,7 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
             .expect("Time went backwards")
             .as_nanos();
         tracing::info!(
-            "Leader RPC block took {} ns ({} ms)",
+            "⏱️Leader RPC block took {} ns ({} ms)",
             end_leader_rpc - start_leader_rpc,
             (end_leader_rpc - start_leader_rpc) / 1_000_000
         );
