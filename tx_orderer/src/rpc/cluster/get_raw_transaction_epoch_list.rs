@@ -128,6 +128,28 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
 
         let rollup_id = self.rollup_id.clone();
 
+        let rollup = Rollup::get(&rollup_id)?;
+
+        let start_get_signer = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+
+        let signer = context.get_signer(rollup.platform).await.map_err(|_| {
+            tracing::error!("Signer not found for platform {:?}", rollup.platform);
+            Error::SignerNotFound
+        })?;
+
+        let end_get_signer = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_nanos();
+        tracing::info!(
+            "⏱️get_signer took {} ns ({} ms)",
+            end_get_signer - start_get_signer,
+            (end_get_signer - start_get_signer) / 1_000_000
+        );
+
         let rollup_metadata = match RollupMetadata::get(&rollup_id) {
             Ok(metadata) => metadata,
             Err(err) => {
@@ -143,8 +165,6 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 });
             }
         };
-
-        let rollup = Rollup::get(&rollup_id)?;
 
         // 현재까지 완료된(leader node가 end_signal을 받고 CanProvideEpochInfo에 추가한) 가장 최신의 epoch를 받아옴(CanProvideEpochInfo에서 받아옴)
         let latest_completed_epoch = match CanProvideEpochInfo::get(&rollup_id) {
@@ -350,26 +370,6 @@ impl RpcParameter<AppState> for GetRawTransactionEpochList {
                 );
                 Error::TxOrdererInfoNotFound
             })?;
-
-        let start_get_signer = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_nanos();
-
-        let signer = context.get_signer(rollup.platform).await.map_err(|_| {
-            tracing::error!("Signer not found for platform {:?}", rollup.platform);
-            Error::SignerNotFound
-        })?;
-
-        let end_get_signer = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_nanos();
-        tracing::info!(
-            "⏱️get_signer took {} ns ({} ms)",
-            end_get_signer - start_get_signer,
-            (end_get_signer - start_get_signer) / 1_000_000
-        );
 
         let tx_orderer_address = signer.address().clone();
 
