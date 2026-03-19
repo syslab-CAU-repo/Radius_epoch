@@ -74,7 +74,7 @@ impl PendingRawTransactionModel {
         };
         */
         let start_counter_key = &(Self::ID, rollup_id, "drain_start");
-        let start_lock = safe_get_mut_or(start_counter_key, || 0)?;
+        let start_lock = kvstore()?.get_mut_or(start_counter_key, || 0)?;
 
         let end_counter_key = &(Self::ID, rollup_id, Self::COUNTER_SUFFIX);
         let end: u64 = kvstore()?.get(end_counter_key).unwrap_or(0);
