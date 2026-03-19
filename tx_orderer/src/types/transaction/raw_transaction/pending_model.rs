@@ -51,7 +51,7 @@ impl PendingRawTransactionModel {
 
     pub fn drain_start(rollup_id: &RollupId) -> Result<u64, KvStoreError> {
         let counter_key = &(Self::ID, rollup_id, "drain_start");
-        Ok(kvstore()?.get(counter_key).unwrap_or(0))
+        Ok(*kvstore()?.get_mut_or(counter_key, || 0)?)
     }
 
     pub fn set_drain_start(rollup_id: &RollupId, value: u64) -> Result<(), KvStoreError> {
@@ -67,9 +67,19 @@ impl PendingRawTransactionModel {
     }
 
     pub fn drain_all(rollup_id: &RollupId) -> Result<Vec<RawTransaction>, KvStoreError> {
-        let start = Self::drain_start(rollup_id)?;
-        let counter_key = &(Self::ID, rollup_id, Self::COUNTER_SUFFIX);
-        let end: u64 = kvstore()?.get(counter_key).unwrap_or(0);
+        /*
+        let start = match Self::drain_start(rollup_id) {
+            Ok(v) => v,
+            Err(_) => return Ok(Vec::new()),
+        };
+        */
+        let start_counter_key = &(Self::ID, rollup_id, "drain_start");
+        let start_lock = safe_get_mut_or(start_counter_key, || 0)?;
+
+        let end_counter_key = &(Self::ID, rollup_id, Self::COUNTER_SUFFIX);
+        let end: u64 = kvstore()?.get(end_counter_key).unwrap_or(0);
+
+        let start = *start_lock;
 
         let mut results = Vec::new();
         for i in start..end {
@@ -83,5 +93,21 @@ impl PendingRawTransactionModel {
         }
         Self::set_drain_start(rollup_id, end)?;
         Ok(results)
+    }
+}
+
+fn safe_get_mut_or<K, V, F>(key: &K, default_fn: F) -> Result<Lock<'static, V>, KvStoreError>
+where
+    K: std::fmt::Debug + Serialize,
+    V: std::fmt::Debug + serde::de::DeserializeOwned + Serialize,
+    F: FnOnce() -> V,
+{
+    match kvstore()?.get_mut(key) {
+        Ok(lock) => Ok(lock),
+        Err(KvStoreError::NoneType) => {
+            kvstore()?.put(key, &default_fn())?;
+            kvstore()?.get_mut(key)
+        }
+        Err(e) => Err(e),
     }
 }
