@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use crate::{
     rpc::{
         cluster::{BatchCreationMessage, SyncBatchCreation, SyncRawTransaction},
@@ -7,6 +9,8 @@ use crate::{
     task::finalize_batch,
     types::*,
 };
+
+static PROCESSED_TX_COUNT: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SendRawTransaction {
@@ -120,15 +124,20 @@ impl RpcParameter<AppState> for SendRawTransaction {
             // First, drain any pending transactions that were queued before authority was granted
             let pending_txs = PendingRawTransactionModel::try_drain_all(&self.rollup_id)
                 .unwrap_or_default();
-            for pending_tx in pending_txs {
+            for pending_tx in &pending_txs {
                 process_single_transaction(
                     &context,
                     &self.rollup_id,
                     &rollup,
                     &cluster,
-                    pending_tx,
+                    pending_tx.clone(),
                 )
                 .await?;
+            }
+            let drained_count = pending_txs.len() as u64;
+            if drained_count > 0 {
+                let total = PROCESSED_TX_COUNT.fetch_add(drained_count, Ordering::Relaxed) + drained_count;
+                tracing::info!("Processed {} pending txs (total: {})", drained_count, total);
             }
 
             let end_drain_pending = std::time::SystemTime::now()
@@ -151,6 +160,9 @@ impl RpcParameter<AppState> for SendRawTransaction {
 
             let is_updated = mut_rollup_metadata.check_and_update_batch_info();
             mut_rollup_metadata.update()?;
+
+            let total = PROCESSED_TX_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
+            tracing::info!("Processed current tx (total: {})", total);
 
             RawTransactionModel::put_with_transaction_hash(
                 &self.rollup_id,
