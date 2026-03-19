@@ -1,4 +1,8 @@
+use std::sync::{Mutex, OnceLock};
+
 use crate::types::prelude::*;
+
+static DRAIN_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PendingRawTransactionModel;
@@ -66,20 +70,21 @@ impl PendingRawTransactionModel {
         Ok(end.saturating_sub(start))
     }
 
-    pub fn drain_all(rollup_id: &RollupId) -> Result<Vec<RawTransaction>, KvStoreError> {
-        /*
-        let start = match Self::drain_start(rollup_id) {
-            Ok(v) => v,
+    pub fn try_drain_all(rollup_id: &RollupId) -> Result<Vec<RawTransaction>, KvStoreError> {
+        let lock = DRAIN_LOCK.get_or_init(|| Mutex::new(()));
+
+        let _guard = match lock.try_lock() {
+            Ok(guard) => guard,
             Err(_) => return Ok(Vec::new()),
         };
-        */
-        let start_counter_key = &(Self::ID, rollup_id, "drain_start");
-        let start_lock = kvstore()?.get_mut_or(start_counter_key, || 0)?;
 
+        let start = Self::drain_start(rollup_id)?;
         let end_counter_key = &(Self::ID, rollup_id, Self::COUNTER_SUFFIX);
         let end: u64 = kvstore()?.get(end_counter_key).unwrap_or(0);
 
-        let start = *start_lock;
+        if start >= end {
+            return Ok(Vec::new());
+        }
 
         let mut results = Vec::new();
         for i in start..end {

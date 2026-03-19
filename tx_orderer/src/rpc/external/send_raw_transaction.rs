@@ -118,7 +118,7 @@ impl RpcParameter<AppState> for SendRawTransaction {
                 .as_nanos();
 
             // First, drain any pending transactions that were queued before authority was granted
-            let pending_txs = PendingRawTransactionModel::drain_all(&self.rollup_id)
+            let pending_txs = PendingRawTransactionModel::try_drain_all(&self.rollup_id)
                 .unwrap_or_default();
             for pending_tx in pending_txs {
                 process_single_transaction(
@@ -397,6 +397,7 @@ async fn process_single_transaction(
     Ok(())
 }
 
+/*
 // 이건 왜 만든거?
 pub async fn process_pending_transactions(
     context: &AppState,
@@ -447,6 +448,7 @@ pub async fn process_pending_transactions(
 
     Ok(())
 }
+*/
 
 #[allow(clippy::too_many_arguments)]
 pub fn sync_raw_transaction(
